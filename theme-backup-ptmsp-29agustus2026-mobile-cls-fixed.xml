@@ -12377,8 +12377,10 @@ $this.wrap('<div class="fluid-width-video-wrapper"></div>').parent(".fluid-width
       }
       //]]>
     </script>
-  <!-- Google Tag Manager (noscript) -->
-<noscript><iframe height='0' src='https://www.googletagmanager.com/ns.html?id=GTM-PB25XFQ5' style='display:none;visibility:hidden' width='0'/></noscript>
-<!-- End Google Tag Manager (noscript) -->
+  <!--
+    Sisa noscript Google Tag Manager (GTM-PB25XFQ5) dihapus: tidak ada
+    script gtm.js yang memuat container ini di tema, jadi iframe ns.html
+    ini hanya permintaan jaringan mati yang tidak pernah terpakai.
+  -->
 </body>
 </html>
