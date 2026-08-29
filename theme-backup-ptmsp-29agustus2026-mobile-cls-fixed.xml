@@ -14,10 +14,15 @@
     <meta content='width=device-width, initial-scale=1.0' name='viewport'/>
     <!--
       Memuat gambar LCP slider pertama lebih awal dan hanya pada homepage.
-      Jika gambar utama slider diganti, samakan URL preload ini dengan URL Image12.
+      URL ini HARUS sama persis dengan displayUrl widget Image12 (lihat
+      b:section id='main-slider-images'), karena skrip slider menimpa
+      background slide-1 dengan gambar Image12 tersebut. Sebelumnya URL
+      preload ini mengarah ke gambar lain sehingga preload terbuang dan
+      gambar LCP sesungguhnya baru diminta belakangan (menyebabkan element
+      render delay). Jika gambar utama slider diganti, samakan lagi URL ini.
     -->
     <b:if cond='data:blog.url == data:blog.homepageUrl'>
-      <link as='image' fetchpriority='high' href='https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlOK-LknD_jedwDkusyM-nZP4eXorVwcZ9DvAaYC1s3hXr8jfSq1en9HfU2N4fLi6Y8eC12p27zTpiklz8yVAj-tS6G7yLvsfDBVpdOh6Lu4PNbULGEtmKL3LtsXL68MCHoux5lMGVbqg/s400/solusi+usaha+anda.webp' rel='preload' type='image/webp'/>
+      <link as='image' fetchpriority='high' href='https://blogger.googleusercontent.com/img/a/AVvXsEgzMjlAx93JVHif2K7kQSzmcFMEkzfEdLCg7_pXxogm3uCvaFgY1XzquLSClIt3KkglOQtxjPIbJk6CH9VgCwWzbnCCN038_87EyobYvC32DliN5cSW2XxdYvJxbmTxGOUlVAWSDJwBnNRlZGff57pQEcfyw6jp52CvQiqZ9p5h6JhlXfb_PToaXpKAxOM=s400' rel='preload'/>
     </b:if>
     <meta content='996b0ded-7daf-4be3-88dc-fd7ed675bca9' name='underestimate-verify-ownership'/>
     <b:include data='blog' name='all-head-content'/>
@@ -82,11 +87,25 @@
     </b:if>
 	<!-- Font Awesome Free 7.3.1; all template icons use native v7 syntax -->
     <link crossorigin='anonymous' href='https://cdnjs.cloudflare.com' rel='preconnect'/>
+    <!-- Preconnect tambahan agar koneksi ke Bootstrap CDN dan jQuery CDN
+         dibuka lebih awal secara paralel, memperpendek network dependency
+         tree pada saat render awal. -->
+    <link crossorigin='anonymous' href='https://maxcdn.bootstrapcdn.com' rel='preconnect'/>
+    <link crossorigin='anonymous' href='https://ajax.googleapis.com' rel='preconnect'/>
 
     <link as='font' crossorigin='anonymous' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/webfonts/fa-solid-900.woff2' rel='preload' type='font/woff2'/>
 
     <link as='font' crossorigin='anonymous' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/webfonts/fa-brands-400.woff2' rel='preload' type='font/woff2'/>
-	<link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css' rel='stylesheet'/>
+	<!--
+	  Font Awesome dimuat secara non-render-blocking: browser mengambilnya
+	  dengan prioritas rendah (rel=preload as=style) lalu baru diaktifkan
+	  sebagai stylesheet setelah selesai diunduh (onload). Aman dilakukan
+	  karena tidak ada ikon Font Awesome yang tampil di area above-the-fold
+	  (header/navigasi/slider); ikon baru dipakai mulai bagian "Layanan".
+	  noscript memastikan ikon tetap tampil bila JavaScript dimatikan.
+	-->
+	<link as='style' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css' onload="this.onload=null;this.rel='stylesheet'" rel='preload'/>
+	<noscript><link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css' rel='stylesheet'/></noscript>
     <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' media='screen' rel='stylesheet' type='text/css'/>
 	<script src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js'/>
 	<!--[if lt IE 9]>
@@ -4891,8 +4910,13 @@ user is not using shrink to fit then we expand the header.
                   <div class='fp-slides-items'>
                     <div class='fp-thumbnail'>
                       <div class='fbt-overlay'/>
-                      <!-- Background ditetapkan sejak HTML awal agar tidak menunggu document.ready. -->
-                      <div class='fbt-resize slide-1' style='background-image:url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlOK-LknD_jedwDkusyM-nZP4eXorVwcZ9DvAaYC1s3hXr8jfSq1en9HfU2N4fLi6Y8eC12p27zTpiklz8yVAj-tS6G7yLvsfDBVpdOh6Lu4PNbULGEtmKL3LtsXL68MCHoux5lMGVbqg/s400/solusi+usaha+anda.webp)'/>
+                      <!--
+                        Background ditetapkan sejak HTML awal (sama persis dengan
+                        URL preload LCP di head dan displayUrl widget Image12) agar
+                        tidak menunggu document.ready dan tidak memicu permintaan
+                        gambar kedua saat skrip slider berjalan.
+                      -->
+                      <div class='fbt-resize slide-1' style='background-image:url(https://blogger.googleusercontent.com/img/a/AVvXsEgzMjlAx93JVHif2K7kQSzmcFMEkzfEdLCg7_pXxogm3uCvaFgY1XzquLSClIt3KkglOQtxjPIbJk6CH9VgCwWzbnCCN038_87EyobYvC32DliN5cSW2XxdYvJxbmTxGOUlVAWSDJwBnNRlZGff57pQEcfyw6jp52CvQiqZ9p5h6JhlXfb_PToaXpKAxOM=s400)'/>
                     </div>
                     <div class='fp-content-wrap'>
                       <div class='fp-content'>
