@@ -575,16 +575,16 @@
     root.querySelector("#mspLuasEfektif").textContent = formatDec(luasEfektif, 2);
     root.querySelector("#mspLuasDetail").textContent =
       luasBukaan > 0
-        ? "(luas kotor " + formatDec(luasKotor, 2) + " m² − bukaan " + formatDec(luasBukaan, 2) + " m²)"
+        ? "(luas kotor " + formatDec(luasKotor, 2) + " m\u00B2 \u2212 bukaan " + formatDec(luasBukaan, 2) + " m\u00B2)"
         : "";
 
     root.querySelector("#mspTotalBata").textContent = formatInt(totalBata);
     root.querySelector("#mspBataPerM2Info").textContent =
-      "≈ " + formatDec(bataPerM2, 1) + " buah/m² sudah + cadangan";
+      "\u2248 " + formatDec(bataPerM2, 1) + " buah/m\u00B2 sudah + cadangan";
 
     root.querySelector("#mspTotalSemenKg").textContent = formatDec(totalSemenKg, 1);
     root.querySelector("#mspZakInfo").textContent =
-      "≈ " + zak40 + " zak (40 kg) atau " + zak50 + " zak (50 kg)";
+      "\u2248 " + zak40 + " zak (40 kg) atau " + zak50 + " zak (50 kg)";
 
     root.querySelector("#mspTotalPasir").textContent = formatDec(totalPasirM3, 3);
 
