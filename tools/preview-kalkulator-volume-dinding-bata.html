@@ -1,0 +1,606 @@
+<title>Kalkulator Volume Dinding</title>
+<style>
+  #msp-calc-dinding {
+    --msp-navy: #14204a;
+    --msp-navy-hover: #243a78;
+    --msp-amber: #f59e0b;
+    --msp-amber-hover: #ffb72b;
+    --msp-canvas: #f8fafc;
+    --msp-card: #ffffff;
+    --msp-border: #e2e8f0;
+    --msp-text: #334155;
+    --msp-muted: #64748b;
+    --msp-danger: #b91c1c;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+    color: var(--msp-text);
+    max-width: 760px;
+    margin: 32px auto;
+    box-sizing: border-box;
+  }
+  #msp-calc-dinding *, #msp-calc-dinding *::before, #msp-calc-dinding *::after {
+    box-sizing: inherit;
+  }
+  #msp-calc-dinding .msp-calc-card {
+    background: var(--msp-card);
+    border: 1px solid var(--msp-border);
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    box-shadow: 0 1px 2px rgba(20, 32, 74, 0.04), 0 8px 24px rgba(20, 32, 74, 0.06);
+  }
+  #msp-calc-dinding .msp-calc-eyebrow {
+    display: inline-block;
+    margin: 0 0 8px;
+    color: var(--msp-navy);
+    background: #eef2ff;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  #msp-calc-dinding h2.msp-calc-title {
+    margin: 0 0 6px;
+    padding: 0;
+    border: 0;
+    color: var(--msp-navy);
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+  #msp-calc-dinding p.msp-calc-desc {
+    margin: 0 0 24px;
+    color: var(--msp-muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+    max-width: 62ch;
+  }
+  #msp-calc-dinding fieldset.msp-calc-section {
+    border: 0;
+    margin: 0 0 20px;
+    padding: 0;
+  }
+  #msp-calc-dinding legend.msp-calc-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--msp-navy);
+  }
+  #msp-calc-dinding .msp-calc-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--msp-navy);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #msp-calc-dinding .msp-calc-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+  }
+  #msp-calc-dinding label.msp-calc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--msp-text);
+  }
+  #msp-calc-dinding .msp-calc-field span.msp-calc-hint {
+    font-weight: 400;
+    color: var(--msp-muted);
+    font-size: 12px;
+  }
+  #msp-calc-dinding input[type="number"],
+  #msp-calc-dinding select {
+    font: inherit;
+    font-size: 15px;
+    color: var(--msp-text);
+    background: var(--msp-canvas);
+    border: 1px solid var(--msp-border);
+    border-radius: 10px;
+    padding: 9px 11px;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  #msp-calc-dinding input[type="number"]:focus-visible,
+  #msp-calc-dinding select:focus-visible,
+  #msp-calc-dinding button:focus-visible {
+    outline: 3px solid var(--msp-amber);
+    outline-offset: 1px;
+  }
+  #msp-calc-dinding .msp-calc-bukaan-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 80px auto;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 10px;
+  }
+  #msp-calc-dinding .msp-calc-bukaan-row label.msp-calc-field {
+    font-size: 12px;
+  }
+  #msp-calc-dinding button.msp-calc-remove {
+    height: 38px;
+    width: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--msp-border);
+    background: var(--msp-card);
+    color: var(--msp-danger);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  #msp-calc-dinding button.msp-calc-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed var(--msp-navy);
+    color: var(--msp-navy);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #msp-calc-dinding button.msp-calc-add:hover {
+    background: #eef2ff;
+  }
+  #msp-calc-dinding details.msp-calc-section summary.msp-calc-legend {
+    cursor: pointer;
+    list-style: none;
+  }
+  #msp-calc-dinding details.msp-calc-section summary::-webkit-details-marker {
+    display: none;
+  }
+  #msp-calc-dinding details.msp-calc-section .msp-calc-row {
+    margin-top: 4px;
+  }
+  #msp-calc-dinding .msp-calc-submit {
+    width: 100%;
+    margin-top: 4px;
+    padding: 13px 20px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--msp-amber);
+    color: var(--msp-navy);
+    font: inherit;
+    font-size: 15.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  #msp-calc-dinding .msp-calc-submit:hover {
+    background: var(--msp-amber-hover);
+    transform: translateY(-1px);
+  }
+  #msp-calc-dinding .msp-calc-error {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: var(--msp-danger);
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  #msp-calc-dinding .msp-calc-hasil {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 3px solid var(--msp-amber);
+  }
+  #msp-calc-dinding .msp-calc-hasil h3 {
+    margin: 0 0 4px;
+    padding: 0;
+    border: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--msp-muted);
+  }
+  #msp-calc-dinding .msp-calc-luas {
+    margin: 0 0 18px;
+    font-size: 15px;
+    color: var(--msp-text);
+  }
+  #msp-calc-dinding .msp-calc-luas strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--msp-navy);
+  }
+  #msp-calc-dinding .msp-calc-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  #msp-calc-dinding .msp-calc-stat {
+    background: var(--msp-canvas);
+    border: 1px solid var(--msp-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  #msp-calc-dinding .msp-calc-stat-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--msp-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  #msp-calc-dinding .msp-calc-stat-value {
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--msp-navy);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  #msp-calc-dinding .msp-calc-stat-sub {
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--msp-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  #msp-calc-dinding .msp-calc-biaya {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  #msp-calc-dinding .msp-calc-biaya-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    padding: 3px 0;
+  }
+  #msp-calc-dinding .msp-calc-biaya-row.msp-calc-total {
+    border-top: 1px solid #fde68a;
+    margin-top: 6px;
+    padding-top: 8px;
+    font-weight: 800;
+    color: var(--msp-navy);
+    font-size: 15px;
+  }
+  #msp-calc-dinding .msp-calc-biaya-row span:last-child,
+  #msp-calc-dinding .msp-calc-biaya-row.msp-calc-total span:last-child {
+    font-variant-numeric: tabular-nums;
+  }
+  #msp-calc-dinding p.msp-calc-disclaimer {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--msp-muted);
+  }
+  @media (max-width: 520px) {
+    #msp-calc-dinding .msp-calc-bukaan-row {
+      grid-template-columns: 1fr 1fr;
+    }
+    #msp-calc-dinding .msp-calc-bukaan-row button.msp-calc-remove {
+      grid-column: 2;
+      justify-self: end;
+    }
+  }
+</style>
+
+<div id="msp-calc-dinding">
+  <div class="msp-calc-card">
+    <span class="msp-calc-eyebrow">Tools Gratis PT MSP</span>
+    <h2 class="msp-calc-title">Kalkulator Volume Dinding &amp; Kebutuhan Pasir, Semen, Bata</h2>
+    <p class="msp-calc-desc">
+      Hitung perkiraan luas dinding bersih dan kebutuhan bata merah, semen, serta
+      pasir pasang untuk pekerjaan pasangan dinding 1/2 bata. Semua perhitungan
+      berjalan langsung di perangkat Anda — tidak ada data yang dikirim ke server mana pun.
+    </p>
+
+    <form id="msp-calc-form" novalidate="novalidate">
+      <fieldset class="msp-calc-section">
+        <legend class="msp-calc-legend"><span class="msp-calc-step-num">1</span> Ukuran Dinding</legend>
+        <div class="msp-calc-row">
+          <label class="msp-calc-field">
+            Panjang dinding (m)
+            <input type="number" id="mspPanjang" min="0" step="0.01" value="6" inputmode="decimal">
+          </label>
+          <label class="msp-calc-field">
+            Tinggi dinding (m)
+            <input type="number" id="mspTinggi" min="0" step="0.01" value="3" inputmode="decimal">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="msp-calc-section">
+        <legend class="msp-calc-legend"><span class="msp-calc-step-num">2</span> Bukaan Pintu / Jendela <span class="msp-calc-hint">&nbsp;(opsional, akan dikurangi dari luas dinding)</span></legend>
+        <div id="mspBukaanList"></div>
+        <button type="button" class="msp-calc-add" id="mspAddBukaan">+ Tambah bukaan</button>
+      </fieldset>
+
+      <fieldset class="msp-calc-section">
+        <legend class="msp-calc-legend"><span class="msp-calc-step-num">3</span> Spesifikasi Bata &amp; Siar</legend>
+        <div class="msp-calc-row">
+          <label class="msp-calc-field">
+            Panjang bata (cm)
+            <input type="number" id="mspBataP" min="1" step="0.1" value="22" inputmode="decimal">
+          </label>
+          <label class="msp-calc-field">
+            Tinggi bata (cm)
+            <input type="number" id="mspBataT" min="1" step="0.1" value="5" inputmode="decimal">
+          </label>
+          <label class="msp-calc-field">
+            Tebal siar/nat (mm)
+            <input type="number" id="mspSiar" min="0" step="1" value="10" inputmode="decimal">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="msp-calc-section">
+        <legend class="msp-calc-legend"><span class="msp-calc-step-num">4</span> Campuran Mortar (Spesi)</legend>
+        <div class="msp-calc-row">
+          <label class="msp-calc-field">
+            Perbandingan semen : pasir
+            <select id="mspRasio">
+              <option value="3">1 PC : 3 PP (trasram / kedap air)</option>
+              <option value="4" selected="selected">1 PC : 4 PP (umum dipakai)</option>
+              <option value="5">1 PC : 5 PP</option>
+              <option value="6">1 PC : 6 PP</option>
+            </select>
+          </label>
+          <label class="msp-calc-field">
+            Faktor cadangan/susut
+            <span class="msp-calc-hint">Antisipasi bata pecah &amp; sisa adukan</span>
+            <input type="number" id="mspCadangan" min="0" max="50" step="1" value="5" inputmode="decimal">
+          </label>
+        </div>
+      </fieldset>
+
+      <details class="msp-calc-section">
+        <summary class="msp-calc-legend"><span class="msp-calc-step-num">5</span> Estimasi Biaya Material <span class="msp-calc-hint">&nbsp;(opsional)</span></summary>
+        <div class="msp-calc-row">
+          <label class="msp-calc-field">
+            Harga bata / buah (Rp)
+            <input type="number" id="mspHargaBata" min="0" step="50" value="" placeholder="0" inputmode="decimal">
+          </label>
+          <label class="msp-calc-field">
+            Harga semen / zak 40 kg (Rp)
+            <input type="number" id="mspHargaSemen" min="0" step="500" value="" placeholder="0" inputmode="decimal">
+          </label>
+          <label class="msp-calc-field">
+            Harga pasir / m&sup3; (Rp)
+            <input type="number" id="mspHargaPasir" min="0" step="1000" value="" placeholder="0" inputmode="decimal">
+          </label>
+        </div>
+      </details>
+
+      <div id="mspError" class="msp-calc-error" hidden="hidden"></div>
+
+      <button type="submit" class="msp-calc-submit">Hitung Kebutuhan Material</button>
+    </form>
+
+    <div id="mspHasil" class="msp-calc-hasil" hidden="hidden">
+      <h3>Hasil Perhitungan</h3>
+      <p class="msp-calc-luas">
+        Luas dinding bersih: <strong id="mspLuasEfektif">0</strong> m&sup2;
+        <span id="mspLuasDetail" style="color:#64748b;"></span>
+      </p>
+
+      <div class="msp-calc-stats">
+        <div class="msp-calc-stat">
+          <div class="msp-calc-stat-label">Bata merah</div>
+          <div class="msp-calc-stat-value"><span id="mspTotalBata">0</span> buah</div>
+          <div class="msp-calc-stat-sub" id="mspBataPerM2Info"></div>
+        </div>
+        <div class="msp-calc-stat">
+          <div class="msp-calc-stat-label">Semen PC</div>
+          <div class="msp-calc-stat-value"><span id="mspTotalSemenKg">0</span> kg</div>
+          <div class="msp-calc-stat-sub" id="mspZakInfo"></div>
+        </div>
+        <div class="msp-calc-stat">
+          <div class="msp-calc-stat-label">Pasir pasang</div>
+          <div class="msp-calc-stat-value"><span id="mspTotalPasir">0</span> m&sup3;</div>
+          <div class="msp-calc-stat-sub">sudah termasuk cadangan</div>
+        </div>
+      </div>
+
+      <div class="msp-calc-biaya" id="mspBiayaBox" hidden="hidden">
+        <div class="msp-calc-biaya-row"><span>Bata merah</span><span id="mspBiayaBata">Rp 0</span></div>
+        <div class="msp-calc-biaya-row"><span>Semen PC</span><span id="mspBiayaSemen">Rp 0</span></div>
+        <div class="msp-calc-biaya-row"><span>Pasir pasang</span><span id="mspBiayaPasir">Rp 0</span></div>
+        <div class="msp-calc-biaya-row msp-calc-total"><span>Perkiraan total material</span><span id="mspBiayaTotal">Rp 0</span></div>
+      </div>
+
+      <p class="msp-calc-disclaimer">
+        *Perhitungan bata memakai rumus geometri dari dimensi bata dan tebal siar yang Anda
+        masukkan. Kebutuhan semen &amp; pasir memakai koefisien Analisa Harga Satuan Pekerjaan
+        (AHSP) yang umum dipakai di Indonesia untuk pasangan bata merah 1/2 bata pada rasio
+        campuran standar (70 buah bata/m&sup2;), lalu disesuaikan otomatis mengikuti dimensi bata
+        yang Anda pakai. Hasil bersifat estimasi lapangan dan dapat berbeda tergantung teknik
+        pemasangan serta kondisi material di lokasi proyek. Untuk RAB proyek yang mengikat,
+        hubungi tim teknis <strong>PT Mitra Solusindo Pratama</strong>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var root = document.getElementById("msp-calc-dinding");
+  if (!root) { return; }
+
+  var form = root.querySelector("#msp-calc-form");
+  var bukaanList = root.querySelector("#mspBukaanList");
+  var addBukaanBtn = root.querySelector("#mspAddBukaan");
+  var errorBox = root.querySelector("#mspError");
+  var hasilBox = root.querySelector("#mspHasil");
+  var bukaanCount = 0;
+
+  // Koefisien AHSP standar (per m2) untuk pasangan bata merah 1/2 bata,
+  // dikalibrasi pada 70 buah bata/m2 (bata 22x5 cm, siar 1 cm).
+  var AHSP = {
+    "3": { semen: 11.5,  pasir: 0.043 },
+    "4": { semen: 9.68,  pasir: 0.045 },
+    "5": { semen: 8.32,  pasir: 0.046 },
+    "6": { semen: 7.265, pasir: 0.047 }
+  };
+  var BASELINE_BATA_PER_M2 = 70;
+
+  function addBukaanRow() {
+    bukaanCount += 1;
+    var row = document.createElement("div");
+    row.className = "msp-calc-bukaan-row";
+    row.setAttribute("data-bukaan-row", String(bukaanCount));
+    row.innerHTML =
+      '<label class="msp-calc-field">Lebar (m)' +
+        '<input type="number" class="msp-bukaan-lebar" min="0" step="0.01" value="1" inputmode="decimal"></label>' +
+      '<label class="msp-calc-field">Tinggi (m)' +
+        '<input type="number" class="msp-bukaan-tinggi" min="0" step="0.01" value="2" inputmode="decimal"></label>' +
+      '<label class="msp-calc-field">Jumlah' +
+        '<input type="number" class="msp-bukaan-jumlah" min="1" step="1" value="1" inputmode="numeric"></label>' +
+      '<button type="button" class="msp-calc-remove" aria-label="Hapus bukaan ini">&times;</button>';
+    row.querySelector(".msp-calc-remove").addEventListener("click", function () {
+      row.remove();
+    });
+    bukaanList.appendChild(row);
+  }
+
+  addBukaanBtn.addEventListener("click", addBukaanRow);
+
+  function num(el, fallback) {
+    var v = parseFloat(el && el.value);
+    return isNaN(v) ? fallback : v;
+  }
+
+  function formatInt(n) {
+    return Math.round(n).toLocaleString("id-ID");
+  }
+
+  function formatDec(n, digits) {
+    return n.toLocaleString("id-ID", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+  }
+
+  function formatRupiah(n) {
+    return "Rp " + Math.round(n).toLocaleString("id-ID");
+  }
+
+  function showError(message) {
+    errorBox.textContent = message;
+    errorBox.hidden = false;
+    hasilBox.hidden = true;
+  }
+
+  function hitung(evt) {
+    evt.preventDefault();
+    errorBox.hidden = true;
+
+    var panjang = num(root.querySelector("#mspPanjang"), 0);
+    var tinggi = num(root.querySelector("#mspTinggi"), 0);
+
+    if (panjang <= 0 || tinggi <= 0) {
+      showError("Panjang dan tinggi dinding harus diisi lebih dari 0 meter.");
+      return;
+    }
+
+    var luasBukaan = 0;
+    var bukaanRows = bukaanList.querySelectorAll("[data-bukaan-row]");
+    for (var i = 0; i < bukaanRows.length; i += 1) {
+      var lebarB = num(bukaanRows[i].querySelector(".msp-bukaan-lebar"), 0);
+      var tinggiB = num(bukaanRows[i].querySelector(".msp-bukaan-tinggi"), 0);
+      var jumlahB = num(bukaanRows[i].querySelector(".msp-bukaan-jumlah"), 0);
+      luasBukaan += lebarB * tinggiB * jumlahB;
+    }
+
+    var luasKotor = panjang * tinggi;
+    var luasEfektif = luasKotor - luasBukaan;
+
+    if (luasEfektif <= 0) {
+      showError("Luas bukaan (pintu/jendela) tidak boleh sama atau lebih besar dari luas dinding.");
+      return;
+    }
+
+    var bataP = num(root.querySelector("#mspBataP"), 22);
+    var bataT = num(root.querySelector("#mspBataT"), 5);
+    var siarMm = num(root.querySelector("#mspSiar"), 10);
+    if (bataP <= 0 || bataT <= 0) {
+      showError("Dimensi bata harus lebih besar dari 0.");
+      return;
+    }
+    var siarCm = siarMm / 10;
+    var modulPanjangM = (bataP + siarCm) / 100;
+    var modulTinggiM = (bataT + siarCm) / 100;
+    var bataPerM2 = 1 / (modulPanjangM * modulTinggiM);
+
+    var rasio = root.querySelector("#mspRasio").value;
+    var koef = AHSP[rasio] || AHSP["4"];
+    var skala = bataPerM2 / BASELINE_BATA_PER_M2;
+    var semenPerM2 = koef.semen * skala;
+    var pasirPerM2 = koef.pasir * skala;
+
+    var cadanganPct = num(root.querySelector("#mspCadangan"), 5);
+    var cadangan = 1 + (cadanganPct < 0 ? 0 : cadanganPct) / 100;
+
+    var totalBata = Math.ceil(luasEfektif * bataPerM2 * cadangan);
+    var totalSemenKg = luasEfektif * semenPerM2 * cadangan;
+    var totalPasirM3 = luasEfektif * pasirPerM2 * cadangan;
+    var zak40 = Math.ceil(totalSemenKg / 40);
+    var zak50 = Math.ceil(totalSemenKg / 50);
+
+    root.querySelector("#mspLuasEfektif").textContent = formatDec(luasEfektif, 2);
+    root.querySelector("#mspLuasDetail").textContent =
+      luasBukaan > 0
+        ? "(luas kotor " + formatDec(luasKotor, 2) + " m² − bukaan " + formatDec(luasBukaan, 2) + " m²)"
+        : "";
+
+    root.querySelector("#mspTotalBata").textContent = formatInt(totalBata);
+    root.querySelector("#mspBataPerM2Info").textContent =
+      "≈ " + formatDec(bataPerM2, 1) + " buah/m² sudah + cadangan";
+
+    root.querySelector("#mspTotalSemenKg").textContent = formatDec(totalSemenKg, 1);
+    root.querySelector("#mspZakInfo").textContent =
+      "≈ " + zak40 + " zak (40 kg) atau " + zak50 + " zak (50 kg)";
+
+    root.querySelector("#mspTotalPasir").textContent = formatDec(totalPasirM3, 3);
+
+    var hargaBata = num(root.querySelector("#mspHargaBata"), 0);
+    var hargaSemen = num(root.querySelector("#mspHargaSemen"), 0);
+    var hargaPasir = num(root.querySelector("#mspHargaPasir"), 0);
+    var biayaBox = root.querySelector("#mspBiayaBox");
+
+    if (hargaBata > 0 || hargaSemen > 0 || hargaPasir > 0) {
+      var biayaBata = totalBata * hargaBata;
+      var biayaSemen = zak40 * hargaSemen;
+      var biayaPasir = totalPasirM3 * hargaPasir;
+      root.querySelector("#mspBiayaBata").textContent = formatRupiah(biayaBata);
+      root.querySelector("#mspBiayaSemen").textContent = formatRupiah(biayaSemen);
+      root.querySelector("#mspBiayaPasir").textContent = formatRupiah(biayaPasir);
+      root.querySelector("#mspBiayaTotal").textContent = formatRupiah(biayaBata + biayaSemen + biayaPasir);
+      biayaBox.hidden = false;
+    } else {
+      biayaBox.hidden = true;
+    }
+
+    hasilBox.hidden = false;
+    hasilBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  form.addEventListener("submit", hitung);
+
+  // Satu baris bukaan contoh agar pengunjung langsung paham formatnya.
+  addBukaanRow();
+})();
+</script>
