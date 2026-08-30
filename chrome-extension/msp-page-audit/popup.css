@@ -1,0 +1,260 @@
+:root {
+  --msp-navy: #14204a;
+  --msp-navy-hover: #243a78;
+  --msp-amber: #f59e0b;
+  --msp-canvas: #f8fafc;
+  --msp-card: #ffffff;
+  --msp-border: #e2e8f0;
+  --msp-text: #334155;
+  --msp-muted: #64748b;
+  --msp-pass: #15803d;
+  --msp-pass-bg: #f0fdf4;
+  --msp-warn: #b45309;
+  --msp-warn-bg: #fffbeb;
+  --msp-fail: #b91c1c;
+  --msp-fail-bg: #fef2f2;
+  --msp-info: #475569;
+  --msp-info-bg: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 380px;
+  max-height: 580px;
+  overflow-y: auto;
+  background: var(--msp-canvas);
+  color: var(--msp-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.msp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--msp-navy);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.msp-logo {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 7px;
+}
+
+.msp-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.msp-header-text h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.msp-url {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #c7d2fe;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msp-icon-btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.msp-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.msp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 16px;
+  color: var(--msp-muted);
+}
+
+.msp-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 3px solid var(--msp-border);
+  border-top-color: var(--msp-amber);
+  animation: msp-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msp-spinner {
+    animation: none;
+  }
+}
+
+@keyframes msp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.msp-error-state {
+  padding: 24px 18px;
+  color: var(--msp-text);
+}
+
+.msp-error-hint {
+  color: var(--msp-muted);
+  font-size: 12px;
+}
+
+.msp-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 14px 16px 4px;
+}
+
+.msp-summary-stat {
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.msp-summary-stat .msp-summary-count {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.msp-summary-stat .msp-summary-label {
+  display: block;
+  font-size: 10.5px;
+  color: var(--msp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.msp-summary-stat.pass .msp-summary-count { color: var(--msp-pass); }
+.msp-summary-stat.warn .msp-summary-count { color: var(--msp-warn); }
+.msp-summary-stat.fail .msp-summary-count { color: var(--msp-fail); }
+
+.msp-section {
+  margin: 12px 16px 0;
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.msp-section:last-child {
+  margin-bottom: 14px;
+}
+
+.msp-section-title {
+  padding: 9px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--msp-navy);
+  background: #eef2ff;
+  border-bottom: 1px solid var(--msp-border);
+}
+
+.msp-row {
+  display: flex;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--msp-border);
+  align-items: flex-start;
+}
+
+.msp-row:last-child {
+  border-bottom: 0;
+}
+
+.msp-badge {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+.msp-badge.pass { background: var(--msp-pass-bg); color: var(--msp-pass); }
+.msp-badge.warn { background: var(--msp-warn-bg); color: var(--msp-warn); }
+.msp-badge.fail { background: var(--msp-fail-bg); color: var(--msp-fail); }
+.msp-badge.info { background: var(--msp-info-bg); color: var(--msp-info); }
+
+.msp-row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.msp-row-label {
+  font-weight: 700;
+  color: var(--msp-text);
+}
+
+.msp-row-detail {
+  color: var(--msp-muted);
+  margin-top: 1px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.msp-row-detail code {
+  background: var(--msp-canvas);
+  border: 1px solid var(--msp-border);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+.msp-footer {
+  padding: 10px 16px 14px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--msp-muted);
+}
+
+.msp-footer a {
+  color: var(--msp-navy);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.msp-footer a:hover {
+  text-decoration: underline;
+}

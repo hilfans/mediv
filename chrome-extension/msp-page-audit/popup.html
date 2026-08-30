@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>MSP Page Audit</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="msp-header">
+    <img src="icons/icon32.png" alt="" class="msp-logo">
+    <div class="msp-header-text">
+      <h1>MSP Page Audit</h1>
+      <p id="mspUrl" class="msp-url">memuat…</p>
+    </div>
+    <button id="mspRefresh" class="msp-icon-btn" title="Audit ulang" aria-label="Audit ulang">&#8635;</button>
+  </header>
+
+  <div id="mspLoading" class="msp-loading">
+    <div class="msp-spinner" aria-hidden="true"></div>
+    <p>Memindai halaman…</p>
+  </div>
+
+  <div id="mspErrorState" class="msp-error-state" hidden>
+    <p id="mspErrorText">Tidak bisa memindai halaman ini.</p>
+    <p class="msp-error-hint">Halaman internal Chrome (chrome://, Web Store, dsb.) tidak dapat diaudit ekstensi.</p>
+  </div>
+
+  <main id="mspReport" class="msp-report" hidden>
+    <div class="msp-summary" id="mspSummary"></div>
+    <div id="mspSections"></div>
+  </main>
+
+  <footer class="msp-footer">
+    Dibuat oleh <strong>PT Mitra Solusindo Pratama</strong> ·
+    <a href="https://www.msp.web.id" target="_blank" rel="noopener noreferrer">msp.web.id</a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
