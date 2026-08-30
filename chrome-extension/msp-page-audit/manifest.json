@@ -19,5 +19,5 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["activeTab", "scripting"]
+  "permissions": ["activeTab", "scripting", "storage"]
 }

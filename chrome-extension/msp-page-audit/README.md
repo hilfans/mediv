@@ -16,17 +16,35 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
 - **Performa & caching**: Cache-Control/Expires, Content-Encoding (kompresi).
 - **Robots & sitemap**: keberadaan `robots.txt` (+ entri Sitemap, deteksi
   `Disallow: /` yang memblokir semua crawler), keberadaan `/sitemap.xml`.
+- **Laporan lengkap & ekspor PDF**: dashboard skor keseluruhan (ring chart),
+  skor per kategori dengan progress bar, kartu ringkasan Lolos/Perhatian/
+  Bermasalah, dan rincian semua pemeriksaan — dibuka di tab baru
+  (`report.html`) lewat tombol di popup. Ada kolom opsional "Disiapkan
+  untuk" (nama klien) untuk laporan yang mau dikirim ke prospek. Tombol
+  "Unduh sebagai PDF" memicu dialog cetak browser (`window.print()`) —
+  pilih tujuan **Simpan sebagai PDF**, tanpa perlu library PDF tambahan.
 
 Semua pengecekan berjalan hanya untuk **tab yang sedang aktif**, dipicu saat
 ikon ekstensi diklik. Tidak ada crawl banyak halaman dan tidak ada
-pemeriksaan situs lain di luar tab aktif pada versi ini.
+pemeriksaan situs lain di luar tab aktif pada versi ini — jadi dashboard
+skor di laporan lengkap merepresentasikan **satu halaman**, bukan hasil
+crawl seluruh situs.
 
 ## Izin yang dipakai
 
-Hanya `activeTab` dan `scripting` — tidak ada `host_permissions` yang
-diminta saat instalasi, sehingga Chrome tidak menampilkan peringatan
-"membaca dan mengubah data di semua situs". Ekstensi hanya mendapat akses
-ke tab yang sedang aktif, dan hanya saat ikonnya benar-benar diklik.
+`activeTab`, `scripting`, dan `storage` (untuk menyimpan sementara hasil
+audit terakhir agar bisa dibaca ulang oleh halaman laporan). Tidak ada
+`host_permissions` yang diminta saat instalasi, sehingga Chrome tidak
+menampilkan peringatan "membaca dan mengubah data di semua situs".
+Ekstensi hanya mendapat akses ke tab yang sedang aktif, dan hanya saat
+ikonnya benar-benar diklik.
+
+## Arsitektur kode
+
+`report-model.js` berisi seluruh logika inti (ekstraksi DOM, pengecekan
+header/robots.txt, evaluasi & skoring) dan dipakai bersama oleh `popup.js`
+(ringkasan compact) dan `report.js` (dashboard lengkap), supaya keduanya
+selalu konsisten dari satu sumber logika.
 
 ## Cara memasang untuk pengujian (mode developer)
 

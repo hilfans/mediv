@@ -1,0 +1,492 @@
+:root {
+  --msp-navy: #14204a;
+  --msp-navy-hover: #243a78;
+  --msp-amber: #f59e0b;
+  --msp-canvas: #f1f5f9;
+  --msp-card: #ffffff;
+  --msp-border: #e2e8f0;
+  --msp-text: #334155;
+  --msp-muted: #64748b;
+  --msp-pass: #15803d;
+  --msp-pass-bg: #f0fdf4;
+  --msp-warn: #b45309;
+  --msp-warn-bg: #fffbeb;
+  --msp-fail: #b91c1c;
+  --msp-fail-bg: #fef2f2;
+  --msp-info: #475569;
+  --msp-info-bg: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--msp-canvas);
+  color: var(--msp-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+/* ---------- Toolbar (layar saja, disembunyikan saat print) ---------- */
+
+.msp-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--msp-navy);
+  color: #fff;
+  padding: 12px 24px;
+}
+
+.msp-toolbar-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.msp-toolbar-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.msp-toolbar-title {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 1.3;
+  margin-right: auto;
+}
+
+.msp-toolbar-title span {
+  color: #c7d2fe;
+  font-size: 11.5px;
+}
+
+.msp-client-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: #c7d2fe;
+}
+
+.msp-client-field input {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  min-width: 200px;
+}
+
+.msp-client-field input::placeholder {
+  color: #93a5d1;
+}
+
+.msp-download-btn {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--msp-amber);
+  color: var(--msp-navy);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.msp-download-btn:hover {
+  background: #ffb72b;
+}
+
+.msp-toolbar-hint {
+  max-width: 960px;
+  margin: 6px auto 0;
+  font-size: 11.5px;
+  color: #c7d2fe;
+}
+
+/* ---------- Empty state ---------- */
+
+.msp-empty-state {
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--msp-muted);
+  padding: 0 20px;
+}
+
+.msp-empty-hint {
+  font-size: 13px;
+}
+
+/* ---------- Halaman laporan ---------- */
+
+.msp-print-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+
+.msp-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+
+.msp-report-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.msp-report-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex: none;
+}
+
+.msp-report-header h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--msp-navy);
+}
+
+.msp-report-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--msp-muted);
+}
+
+.msp-report-meta {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.msp-report-meta div {
+  display: flex;
+  gap: 8px;
+}
+
+.msp-report-meta dt {
+  color: var(--msp-muted);
+  min-width: 90px;
+}
+
+.msp-report-meta dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--msp-text);
+  word-break: break-word;
+}
+
+/* ---------- Skor keseluruhan ---------- */
+
+.msp-score-overview {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.msp-score-ring-wrap {
+  position: relative;
+  flex: none;
+  width: 140px;
+  text-align: center;
+}
+
+.msp-score-ring {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.msp-score-ring-bg {
+  fill: none;
+  stroke: var(--msp-border);
+  stroke-width: 10;
+}
+
+.msp-score-ring-fg {
+  fill: none;
+  stroke: var(--msp-pass);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.msp-score-ring-fg.band-warn { stroke: var(--msp-warn); }
+.msp-score-ring-fg.band-fail { stroke: var(--msp-fail); }
+
+.msp-score-ring-label {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  width: 120px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--msp-navy);
+}
+
+.msp-score-percent {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--msp-muted);
+}
+
+.msp-score-caption {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--msp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.msp-category-scores {
+  flex: 1;
+  min-width: 260px;
+  display: grid;
+  gap: 10px;
+}
+
+.msp-category-score-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 42px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.msp-category-score-row .msp-cat-name {
+  font-weight: 700;
+  color: var(--msp-text);
+}
+
+.msp-category-score-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--msp-border);
+  overflow: hidden;
+}
+
+.msp-category-score-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--msp-pass);
+}
+
+.msp-category-score-fill.band-warn { background: var(--msp-warn); }
+.msp-category-score-fill.band-fail { background: var(--msp-fail); }
+
+.msp-category-score-row .msp-cat-pct {
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--msp-text);
+}
+
+/* ---------- Stat tiles ---------- */
+
+.msp-stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.msp-stat-tile {
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.msp-stat-tile-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--msp-muted);
+}
+
+.msp-stat-tile-value {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--msp-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.msp-stat-tile.pass .msp-stat-tile-value { color: var(--msp-pass); }
+.msp-stat-tile.warn .msp-stat-tile-value { color: var(--msp-warn); }
+.msp-stat-tile.fail .msp-stat-tile-value { color: var(--msp-fail); }
+
+/* ---------- Kategori detail ---------- */
+
+.msp-detail-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.msp-detail-card {
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  break-inside: avoid;
+  align-self: start;
+}
+
+.msp-detail-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #eef2ff;
+  border-bottom: 1px solid var(--msp-border);
+}
+
+.msp-detail-card-header h2 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--msp-navy);
+}
+
+.msp-detail-card-header .msp-cat-pct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--msp-text);
+}
+
+.msp-row {
+  display: flex;
+  gap: 9px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--msp-border);
+  align-items: flex-start;
+  font-size: 12.5px;
+}
+
+.msp-row:last-child {
+  border-bottom: 0;
+}
+
+.msp-badge {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+.msp-badge.pass { background: var(--msp-pass-bg); color: var(--msp-pass); }
+.msp-badge.warn { background: var(--msp-warn-bg); color: var(--msp-warn); }
+.msp-badge.fail { background: var(--msp-fail-bg); color: var(--msp-fail); }
+.msp-badge.info { background: var(--msp-info-bg); color: var(--msp-info); }
+
+.msp-row-label {
+  font-weight: 700;
+}
+
+.msp-row-detail {
+  color: var(--msp-muted);
+  margin-top: 1px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.msp-report-footer {
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ---------- Print / Ekspor PDF ---------- */
+
+@media print {
+  .msp-no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .msp-print-page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .msp-detail-sections {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .msp-detail-card,
+  .msp-report-header,
+  .msp-score-overview,
+  .msp-stat-tile {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  /* Chrome membuang warna latar/aksen secara default saat print;
+     paksa dipertahankan supaya laporan tetap sesuai brand. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@page {
+  margin: 14mm 12mm;
+}
+
+@media (max-width: 720px) {
+  .msp-detail-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .msp-stat-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .msp-category-score-row {
+    grid-template-columns: 110px 1fr 38px;
+  }
+}

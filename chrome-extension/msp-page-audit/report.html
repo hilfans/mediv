@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Laporan Audit — MSP Page Audit</title>
+  <link rel="stylesheet" href="report.css">
+</head>
+<body>
+  <div class="msp-toolbar msp-no-print">
+    <div class="msp-toolbar-inner">
+      <img src="icons/icon32.png" alt="" class="msp-toolbar-logo">
+      <div class="msp-toolbar-title">
+        <strong>MSP Page Audit</strong>
+        <span>Laporan Lengkap</span>
+      </div>
+      <label class="msp-client-field">
+        Disiapkan untuk (opsional)
+        <input type="text" id="mspClientName" placeholder="Nama klien / perusahaan">
+      </label>
+      <button id="mspDownloadPdf" class="msp-download-btn">Unduh sebagai PDF</button>
+    </div>
+    <p class="msp-toolbar-hint">
+      Tombol di atas membuka kotak dialog cetak browser — pilih tujuan
+      <strong>"Simpan sebagai PDF"</strong> untuk mengunduhnya.
+    </p>
+  </div>
+
+  <div id="mspEmptyState" class="msp-empty-state" hidden>
+    <p>Belum ada data audit tersimpan.</p>
+    <p class="msp-empty-hint">Buka ikon ekstensi MSP Page Audit pada tab yang ingin diaudit, tunggu hasilnya muncul, lalu klik "Lihat Laporan Lengkap".</p>
+  </div>
+
+  <main id="mspReportRoot" class="msp-print-page" hidden>
+    <header class="msp-report-header">
+      <div class="msp-report-header-brand">
+        <img src="icons/icon48.png" alt="" class="msp-report-logo">
+        <div>
+          <h1>Laporan Audit Halaman</h1>
+          <p class="msp-report-sub">PT Mitra Solusindo Pratama &middot; msp.web.id</p>
+        </div>
+      </div>
+      <dl class="msp-report-meta">
+        <div><dt>URL diaudit</dt><dd id="mspReportUrl">-</dd></div>
+        <div><dt>Tanggal</dt><dd id="mspReportDate">-</dd></div>
+        <div id="mspReportClientRow" hidden><dt>Disiapkan untuk</dt><dd id="mspReportClient">-</dd></div>
+      </dl>
+    </header>
+
+    <section class="msp-score-overview">
+      <div class="msp-score-ring-wrap">
+        <svg viewBox="0 0 120 120" class="msp-score-ring" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" class="msp-score-ring-bg"></circle>
+          <circle cx="60" cy="60" r="52" class="msp-score-ring-fg" id="mspScoreRingFg"></circle>
+        </svg>
+        <div class="msp-score-ring-label">
+          <span id="mspOverallScore">0</span><span class="msp-score-percent">%</span>
+        </div>
+        <p class="msp-score-caption">Skor Keseluruhan</p>
+      </div>
+
+      <div class="msp-category-scores" id="mspCategoryScores"></div>
+    </section>
+
+    <section class="msp-stat-tiles" id="mspStatTiles"></section>
+
+    <section id="mspDetailSections" class="msp-detail-sections"></section>
+
+    <footer class="msp-report-footer">
+      Laporan ini dibuat otomatis oleh ekstensi <strong>MSP Page Audit</strong> milik
+      PT Mitra Solusindo Pratama, berdasarkan pemeriksaan on-page dan header
+      jaringan pada satu halaman. Hasil bersifat estimasi teknis, bukan
+      jaminan peringkat mesin pencari.
+    </footer>
+  </main>
+
+  <script src="report.js"></script>
+</body>
+</html>

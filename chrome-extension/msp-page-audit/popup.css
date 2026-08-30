@@ -242,6 +242,25 @@ body {
   font-size: 11px;
 }
 
+.msp-full-report-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 4px 16px 2px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--msp-amber);
+  color: var(--msp-navy);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.msp-full-report-btn:hover {
+  background: #ffb72b;
+}
+
 .msp-footer {
   padding: 10px 16px 14px;
   text-align: center;
