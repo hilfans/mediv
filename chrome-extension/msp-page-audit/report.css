@@ -106,6 +106,14 @@ body {
   background: #ffb72b;
 }
 
+.msp-crawl-link {
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
 .msp-toolbar-hint {
   max-width: 960px;
   margin: 6px auto 0;
@@ -172,6 +180,11 @@ body {
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--msp-muted);
+}
+
+.msp-report-sub a {
+  color: inherit;
+  text-decoration: underline;
 }
 
 .msp-report-meta {
@@ -435,6 +448,11 @@ body {
   color: var(--msp-muted);
   line-height: 1.6;
   text-align: center;
+}
+
+.msp-report-footer a {
+  color: var(--msp-navy);
+  text-decoration: underline;
 }
 
 /* ---------- Print / Ekspor PDF ---------- */

@@ -55,11 +55,13 @@ async function runAudit() {
   var reportEl = document.getElementById("mspReport");
   var urlEl = document.getElementById("mspUrl");
   var fullReportBtn = document.getElementById("mspFullReport");
+  var crawlBtn = document.getElementById("mspCrawlSite");
 
   loadingEl.hidden = false;
   errorEl.hidden = true;
   reportEl.hidden = true;
   fullReportBtn.hidden = true;
+  crawlBtn.hidden = true;
 
   try {
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -97,6 +99,7 @@ async function runAudit() {
     loadingEl.hidden = true;
     reportEl.hidden = false;
     fullReportBtn.hidden = false;
+    crawlBtn.hidden = false;
   } catch (err) {
     loadingEl.hidden = true;
     errorEl.hidden = false;
@@ -107,6 +110,9 @@ async function runAudit() {
 document.getElementById("mspRefresh").addEventListener("click", runAudit);
 document.getElementById("mspFullReport").addEventListener("click", function () {
   chrome.tabs.create({ url: chrome.runtime.getURL("report.html") });
+});
+document.getElementById("mspCrawlSite").addEventListener("click", function () {
+  chrome.tabs.create({ url: chrome.runtime.getURL("crawl.html") });
 });
 
 runAudit();

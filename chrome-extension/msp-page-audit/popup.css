@@ -261,6 +261,25 @@ body {
   background: #ffb72b;
 }
 
+.msp-crawl-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 8px 16px 2px;
+  padding: 10px 14px;
+  border: 1px solid var(--msp-border);
+  border-radius: 10px;
+  background: var(--msp-card);
+  color: var(--msp-navy);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.msp-crawl-btn:hover {
+  background: var(--msp-canvas);
+}
+
 .msp-footer {
   padding: 10px 16px 14px;
   text-align: center;

@@ -24,27 +24,55 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   "Unduh sebagai PDF" memicu dialog cetak browser (`window.print()`) —
   pilih tujuan **Simpan sebagai PDF**, tanpa perlu library PDF tambahan.
 
-Semua pengecekan berjalan hanya untuk **tab yang sedang aktif**, dipicu saat
-ikon ekstensi diklik. Tidak ada crawl banyak halaman dan tidak ada
-pemeriksaan situs lain di luar tab aktif pada versi ini — jadi dashboard
-skor di laporan lengkap merepresentasikan **satu halaman**, bukan hasil
-crawl seluruh situs.
+Semua pengecekan di atas berjalan hanya untuk **tab yang sedang aktif**,
+dipicu saat ikon ekstensi diklik.
+
+## Cakupan v2 — Crawl Situs & Broken Link Checker
+
+Dibuka lewat tombol **"Crawl Situs & Cek Broken Link"** di popup atau
+laporan lengkap (`crawl.html`):
+
+- Menjelajahi situs target mulai dari `sitemap.xml` (ikut satu tingkat ke
+  dalam bila berupa sitemap index), dengan fallback ke penelusuran tautan
+  internal apabila sitemap tidak ada.
+- Menghormati `robots.txt` (`Disallow` untuk `User-agent: *`) — path yang
+  di-*disallow* tidak ikut di-crawl. **Penyederhanaan yang disengaja**:
+  pencocokan aturan pakai *prefix match* biasa, tanpa wildcard `*`/`$`
+  seperti spesifikasi robots.txt lengkap.
+- Mengaudit tiap halaman HTML yang ditemukan (memakai logika evaluasi yang
+  sama dengan audit satu halaman) dan mendeteksi **redirect** (301/302, dsb).
+- Memeriksa status semua tautan yang ditemukan (internal & eksternal) untuk
+  mencari **broken link** (4xx/5xx atau gagal terhubung).
+- 4 tingkatan yang bisa dipilih pengguna: Light (50 halaman), Medium (200),
+  Heavy (500), Ultra (1000) — dengan modal konfirmasi wajib disetujui
+  sebelum crawl jalan, karena aktivitas ini membebani server situs target.
+- Hasil crawl bisa diekspor ke PDF juga (`window.print()`, sama seperti
+  laporan satu halaman).
+
+**Izin tambahan**: fitur ini butuh akses ke domain di luar tab aktif, jadi
+`http://*/*` dan `https://*/*` didaftarkan sebagai **optional host
+permission** — Chrome baru menampilkan dialog persetujuan saat pengguna
+benar-benar mengklik "Setuju & Lanjutkan" pada modal konfirmasi, BUKAN saat
+ekstensi pertama kali dipasang. Kalau pengguna menolak, fitur crawl
+dibatalkan tapi audit satu halaman di popup tetap berfungsi normal.
 
 ## Izin yang dipakai
 
-`activeTab`, `scripting`, dan `storage` (untuk menyimpan sementara hasil
-audit terakhir agar bisa dibaca ulang oleh halaman laporan). Tidak ada
-`host_permissions` yang diminta saat instalasi, sehingga Chrome tidak
-menampilkan peringatan "membaca dan mengubah data di semua situs".
-Ekstensi hanya mendapat akses ke tab yang sedang aktif, dan hanya saat
-ikonnya benar-benar diklik.
+- `activeTab`, `scripting`, `storage` — wajib, terpasang sejak instalasi,
+  tanpa dialog peringatan khusus.
+- `http://*/*`, `https://*/*` — **opsional**, baru diminta saat pengguna
+  mengaktifkan fitur Crawl Situs (lihat di atas).
 
 ## Arsitektur kode
 
-`report-model.js` berisi seluruh logika inti (ekstraksi DOM, pengecekan
-header/robots.txt, evaluasi & skoring) dan dipakai bersama oleh `popup.js`
-(ringkasan compact) dan `report.js` (dashboard lengkap), supaya keduanya
-selalu konsisten dari satu sumber logika.
+- `report-model.js` — logika inti audit satu halaman (ekstraksi DOM lewat
+  `chrome.scripting`, pengecekan header/robots.txt, evaluasi & skoring).
+  Dipakai bersama oleh `popup.js` dan `report.js`.
+- `crawl-engine.js` — mesin crawl BFS + pengecek broken link, berjalan di
+  konteks `crawl.html` sendiri (bukan disuntik ke tab manapun), memakai
+  `fetch` langsung karena sudah punya optional host permission. Memakai
+  ulang `mspEvaluate()` dari `report-model.js` untuk menilai tiap halaman
+  hasil crawl secara konsisten dengan audit satu halaman.
 
 ## Cara memasang untuk pengujian (mode developer)
 
@@ -58,17 +86,19 @@ Untuk publish ke Chrome Web Store nanti, folder ini tinggal di-zip dan
 diunggah lewat Chrome Web Store Developer Dashboard (perlu akun developer
 terdaftar, ada biaya pendaftaran satu kali dari Google).
 
-## Batasan yang disengaja (v1)
+## Batasan yang disengaja
 
-- **Broken-link checker lintas domain** dan **crawl banyak halaman** belum
-  ada di v1. Fitur ini butuh izin akses ke situs lain (`host_permissions`)
-  yang sebaiknya diminta saat runtime (bukan dipaksa saat instalasi) —
-  direncanakan sebagai v2.
 - **DA (Domain Authority), backlink, dan traffic** sengaja tidak
   disertakan — data ini hanya ada di database proprietary Moz/Ahrefs/SEMrush
   dan butuh API berbayar pihak ketiga (sudah dibahas terpisah).
 - Deteksi JSON-LD bersifat ringan (jumlah blok & tipe), bukan validator
   penuh terhadap spesifikasi schema.org.
+- Crawl v2 bukan crawler penuh ala mesin pencari: konkurensi & jeda antar
+  request dibuat tetap (bukan makin agresif di tingkat Heavy/Ultra — cuma
+  jumlah halamannya yang beda), dan link ke aset non-HTML (PDF, gambar,
+  dst.) yang ditemukan lewat `<a href>` tetap di-GET penuh sebelum ketahuan
+  bukan halaman (potensi boros bandwidth untuk aset besar) — cukup untuk
+  situs skala UKM/menengah, belum dioptimalkan untuk crawl skala besar.
 
 ## Soal asal-usul kode
 

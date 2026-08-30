@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Crawl Situs — MSP Page Audit</title>
+  <link rel="stylesheet" href="crawl.css">
+</head>
+<body>
+  <div class="msp-toolbar msp-no-print">
+    <div class="msp-toolbar-inner">
+      <img src="icons/icon32.png" alt="" class="msp-toolbar-logo">
+      <div class="msp-toolbar-title">
+        <strong>MSP Page Audit</strong>
+        <span>Crawl Situs &amp; Broken Link Checker</span>
+      </div>
+      <button id="mspDownloadPdf" class="msp-download-btn" hidden>Unduh sebagai PDF</button>
+    </div>
+  </div>
+
+  <main class="msp-crawl-page">
+
+    <section id="mspSetupForm" class="msp-setup-card">
+      <h1>Crawl Beberapa Halaman Sekaligus</h1>
+      <p class="msp-setup-desc">
+        Fitur ini menjelajahi situs target mulai dari sitemap.xml (atau
+        tautan internal bila sitemap tidak ada), mengaudit tiap halaman
+        yang ditemukan, lalu memeriksa semua tautan (internal &amp;
+        eksternal) untuk mencari broken link. Berbeda dari audit satu
+        halaman, fitur ini butuh izin tambahan karena harus mengakses
+        domain di luar tab yang sedang aktif.
+      </p>
+
+      <label class="msp-field">
+        URL situs yang ingin di-crawl
+        <input type="url" id="mspTargetUrl" placeholder="https://www.msp.web.id">
+      </label>
+
+      <fieldset class="msp-preset-group">
+        <legend>Tingkat crawl</legend>
+        <label class="msp-preset-option">
+          <input type="radio" name="mspPreset" value="light" checked>
+          <span class="msp-preset-name">Light &mdash; 50 halaman</span>
+          <span class="msp-preset-hint">Cocok untuk cek cepat. Perkiraan &lt; 2 menit.</span>
+        </label>
+        <label class="msp-preset-option">
+          <input type="radio" name="mspPreset" value="medium">
+          <span class="msp-preset-name">Medium &mdash; 200 halaman</span>
+          <span class="msp-preset-hint">Untuk situs dengan cukup banyak artikel/halaman. Perkiraan 3&ndash;6 menit.</span>
+        </label>
+        <label class="msp-preset-option">
+          <input type="radio" name="mspPreset" value="heavy">
+          <span class="msp-preset-name">Heavy &mdash; 500 halaman</span>
+          <span class="msp-preset-hint">Situs besar. Membebani server target lebih lama. Perkiraan 8&ndash;15 menit.</span>
+        </label>
+        <label class="msp-preset-option">
+          <input type="radio" name="mspPreset" value="ultra">
+          <span class="msp-preset-name">Ultra &mdash; 1000 halaman</span>
+          <span class="msp-preset-hint">Paling berat untuk server target. Gunakan hanya bila perlu. Perkiraan 15&ndash;30 menit.</span>
+        </label>
+      </fieldset>
+
+      <button id="mspStartCrawl" class="msp-primary-btn">Mulai Crawl</button>
+
+      <div id="mspLastCrawlNotice" class="msp-last-crawl-notice" hidden>
+        Ada hasil crawl tersimpan dari percobaan sebelumnya.
+        <button id="mspShowLastCrawl" class="msp-link-btn">Lihat hasil itu</button>
+      </div>
+    </section>
+
+    <section id="mspProgressSection" class="msp-progress-card" hidden>
+      <h2 id="mspProgressPhase">Menyiapkan crawl&hellip;</h2>
+      <div class="msp-progress-track">
+        <div class="msp-progress-fill" id="mspProgressFill" style="width:0%"></div>
+      </div>
+      <p id="mspProgressCount" class="msp-progress-count">0 dari 0 halaman</p>
+      <ul id="mspProgressLog" class="msp-progress-log"></ul>
+    </section>
+
+    <section id="mspResults" class="msp-results" hidden>
+      <header class="msp-report-header">
+        <div class="msp-report-header-brand">
+          <img src="icons/icon48.png" alt="" class="msp-report-logo">
+          <div>
+            <h1>Laporan Crawl Situs</h1>
+            <p class="msp-report-sub">
+              <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer">PT Mitra Solusindo Pratama &middot; msp.web.id</a>
+            </p>
+          </div>
+        </div>
+        <dl class="msp-report-meta">
+          <div><dt>Situs</dt><dd id="mspResultOrigin">-</dd></div>
+          <div><dt>Tanggal</dt><dd id="mspResultDate">-</dd></div>
+        </dl>
+      </header>
+
+      <section class="msp-stat-tiles" id="mspCrawlStatTiles"></section>
+
+      <section class="msp-crawl-block">
+        <h2>Halaman yang Di-crawl</h2>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspPagesTable">
+            <thead><tr><th>URL</th><th>Status</th><th>Skor</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h2>Broken Link <span class="msp-count-badge" id="mspBrokenCount">0</span></h2>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspBrokenTable">
+            <thead><tr><th>URL Tautan</th><th>Status</th><th>Ditemukan di</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="mspBrokenEmpty" class="msp-empty-note" hidden>Tidak ada broken link yang ditemukan. 🎉</p>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h2>Redirect <span class="msp-count-badge" id="mspRedirectCount">0</span></h2>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspRedirectTable">
+            <thead><tr><th>Dari</th><th>Ke</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="mspRedirectEmpty" class="msp-empty-note" hidden>Tidak ada redirect yang ditemukan.</p>
+      </section>
+
+      <button id="mspNewCrawl" class="msp-secondary-btn msp-no-print">Jalankan Crawl Baru</button>
+
+      <footer class="msp-report-footer">
+        Laporan ini dibuat otomatis oleh ekstensi <strong>MSP Page Audit</strong>,
+        layanan digital dari Divisi Electronic Business
+        <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer"><strong>PT Mitra Solusindo Pratama</strong></a>.
+        Pemeriksaan disederhanakan (bukan crawler penuh seperti mesin pencari) dan
+        bersifat estimasi teknis, bukan jaminan peringkat mesin pencari.
+      </footer>
+    </section>
+  </main>
+
+  <div id="mspConfirmModal" class="msp-modal-backdrop msp-no-print" hidden>
+    <div class="msp-modal" role="dialog" aria-modal="true" aria-labelledby="mspModalTitle">
+      <h2 id="mspModalTitle">Konfirmasi Sebelum Crawl</h2>
+      <p id="mspModalBody"></p>
+      <p class="msp-modal-warning">
+        Proses ini akan mengirim banyak permintaan ke server situs target
+        dan berpotensi membebaninya, terutama pada situs dengan hosting
+        terbatas. Pastikan Anda berwenang meng-crawl situs ini.
+      </p>
+      <div class="msp-modal-actions">
+        <button id="mspModalCancel" class="msp-secondary-btn">Batalkan</button>
+        <button id="mspModalConfirm" class="msp-primary-btn">Setuju &amp; Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="report-model.js"></script>
+  <script src="crawl-engine.js"></script>
+  <script src="crawl.js"></script>
+</body>
+</html>
