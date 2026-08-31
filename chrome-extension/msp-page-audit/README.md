@@ -121,6 +121,23 @@ ekstensi>/*`) supaya key hanya bisa dipakai dari ekstensi ini sendiri —
 langkah lengkapnya (termasuk cara dapat ID ekstensi yang stabil) ada di
 [`PUBLISHING.md`](./PUBLISHING.md).
 
+### Batas 25x/hari (soft limit)
+
+Fitur Cek Kecepatan dibatasi **25 pemakaian per hari per browser**, dilacak
+lewat `chrome.storage.local` (kunci `mspSpeedUsageV1`, reset otomatis
+begitu tanggal berganti). Kalau limit tercapai, `speed.html` menampilkan
+kartu ajakan hubungi PT MSP untuk paket berlangganan tanpa batas harian,
+alih-alih form cek kecepatan. Audit satu halaman (v1) dan Crawl Situs (v2)
+**tidak** dibatasi karena keduanya tidak memakai API berbayar/berkuota
+milik Google.
+
+Ini murni **soft limit**, bukan penegakan yang benar-benar tidak bisa
+ditembus: pengguna yang tahu caranya bisa mereset hitungan lewat DevTools
+console atau install ulang ekstensi. Fungsinya sebagai pengingat/pendorong
+upgrade untuk pengguna umum, bukan jaminan pendapatan dari pengguna yang
+berniat menghindar — penegakan yang sungguh-sungguh butuh pelacakan +
+lisensi di sisi server, di luar cakupan versi ini.
+
 ## Izin yang dipakai
 
 - `activeTab`, `scripting`, `storage` — wajib, terpasang sejak instalasi,

@@ -208,6 +208,37 @@ body {
 
 .msp-error-card p { margin: 0 0 12px; font-size: 13.5px; }
 
+.msp-usage-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--msp-muted);
+}
+
+.msp-usage-note.warn {
+  color: var(--msp-ni);
+  font-weight: 700;
+}
+
+.msp-limit-card {
+  background: var(--msp-ni-bg);
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.msp-limit-card h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.msp-limit-cta {
+  display: inline-block;
+  margin-top: 6px;
+  text-decoration: none;
+}
+
 /* ---------- Results ---------- */
 
 .msp-results { display: grid; gap: 16px; }

@@ -1,6 +1,38 @@
 "use strict";
 
 var STORAGE_KEY = "mspPsiApiKey";
+var USAGE_STORAGE_KEY = "mspSpeedUsageV1";
+var DAILY_LIMIT = 25;
+
+/**
+ * Batas 25x/hari ini murni penanda di sisi ekstensi (chrome.storage.local),
+ * BUKAN penegakan yang benar-benar tidak bisa ditembus -- pengguna yang
+ * tahu caranya bisa mereset lewat DevTools atau install ulang ekstensi.
+ * Fungsinya sebagai pengingat/pendorong upgrade untuk pengguna umum, bukan
+ * jaminan pendapatan dari pengguna yang berniat menghindar (itu perlu
+ * penegakan di server, bukan di ekstensi -- sudah didiskusikan terpisah).
+ */
+function mspTodayKey() {
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+async function mspGetUsage() {
+  var data = await chrome.storage.local.get(USAGE_STORAGE_KEY);
+  var usage = data && data[USAGE_STORAGE_KEY];
+  var today = mspTodayKey();
+  if (!usage || usage.date !== today) {
+    return { date: today, count: 0 };
+  }
+  return usage;
+}
+
+async function mspIncrementUsage() {
+  var usage = await mspGetUsage();
+  usage.count += 1;
+  await chrome.storage.local.set({ [USAGE_STORAGE_KEY]: usage });
+  return usage;
+}
 var METRIC_LABELS = {
   lcp: "LCP",
   cls: "CLS",
@@ -169,6 +201,33 @@ async function getApiKey() {
   return data && data[STORAGE_KEY] ? data[STORAGE_KEY] : "";
 }
 
+function renderUsageNote(usage) {
+  var el = document.getElementById("mspUsageNote");
+  if (!el) { return; }
+  var remaining = Math.max(0, DAILY_LIMIT - usage.count);
+  el.textContent = "Sisa cek kecepatan gratis hari ini: " + remaining + " dari " + DAILY_LIMIT + ".";
+  el.classList.toggle("warn", remaining <= 5);
+}
+
+function showLimitState() {
+  document.getElementById("mspNoKeyState").hidden = true;
+  document.getElementById("mspSetupForm").hidden = true;
+  document.getElementById("mspErrorState").hidden = true;
+  document.getElementById("mspLoading").hidden = true;
+  document.getElementById("mspLimitState").hidden = false;
+}
+
+async function showSetupFormIfAllowed() {
+  var usage = await mspGetUsage();
+  if (usage.count >= DAILY_LIMIT) {
+    showLimitState();
+    return;
+  }
+  document.getElementById("mspLimitState").hidden = true;
+  document.getElementById("mspSetupForm").hidden = false;
+  renderUsageNote(usage);
+}
+
 async function runCheck() {
   var targetInput = document.getElementById("mspTargetUrl");
   var targetUrl = targetInput.value.trim();
@@ -183,6 +242,12 @@ async function runCheck() {
     if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") { throw new Error("bukan http/https"); }
   } catch (e) {
     alert("URL tidak valid. Contoh yang benar: https://www.msp.web.id");
+    return;
+  }
+
+  var usage = await mspGetUsage();
+  if (usage.count >= DAILY_LIMIT) {
+    showLimitState();
     return;
   }
 
@@ -207,6 +272,8 @@ async function runCheck() {
     }
     var parsed = mspParsePsiResponse(data);
 
+    await mspIncrementUsage();
+
     await chrome.storage.local.set({
       mspLastSpeedCheck: { parsed: parsed, targetUrl: targetUrl, strategy: strategy, generatedAt: new Date().toISOString() }
     });
@@ -228,6 +295,8 @@ async function init() {
   if (!apiKey) {
     document.getElementById("mspNoKeyState").hidden = false;
     document.getElementById("mspSetupForm").hidden = true;
+  } else {
+    await showSetupFormIfAllowed();
   }
 
   document.getElementById("mspGoToOptions").addEventListener("click", function () {
@@ -237,14 +306,14 @@ async function init() {
     chrome.runtime.openOptionsPage();
   });
   document.getElementById("mspRunCheck").addEventListener("click", runCheck);
-  document.getElementById("mspRetry").addEventListener("click", function () {
+  document.getElementById("mspRetry").addEventListener("click", async function () {
     document.getElementById("mspErrorState").hidden = true;
-    document.getElementById("mspSetupForm").hidden = false;
+    await showSetupFormIfAllowed();
   });
-  document.getElementById("mspNewCheck").addEventListener("click", function () {
+  document.getElementById("mspNewCheck").addEventListener("click", async function () {
     document.getElementById("mspResults").hidden = true;
     document.getElementById("mspDownloadPdf").hidden = true;
-    document.getElementById("mspSetupForm").hidden = false;
+    await showSetupFormIfAllowed();
   });
   document.getElementById("mspDownloadPdf").addEventListener("click", function () {
     window.print();
