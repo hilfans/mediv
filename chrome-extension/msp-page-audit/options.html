@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Pengaturan — MSP Page Audit</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header class="msp-header">
+    <img src="icons/icon32.png" alt="" class="msp-logo">
+    <div>
+      <h1>Pengaturan MSP Page Audit</h1>
+      <p class="msp-sub">PT Mitra Solusindo Pratama</p>
+    </div>
+  </header>
+
+  <main class="msp-card">
+    <h2>API Key PageSpeed Insights (Google Lighthouse)</h2>
+    <p class="msp-desc">
+      Dipakai khusus untuk fitur <strong>Cek Kecepatan (Lighthouse)</strong> —
+      memanggil skor Performance/SEO/Accessibility/Best Practices asli dari
+      Google, bukan sekadar heuristik internal ekstensi ini.
+    </p>
+
+    <div class="msp-warning">
+      <strong>Penting soal keamanan:</strong> API key disimpan hanya di
+      penyimpanan lokal browser Anda sendiri (<code>chrome.storage.local</code>),
+      tidak pernah dikirim ke server PT MSP atau pihak lain selain langsung
+      ke Google saat memanggil API. Tetap disarankan membatasi key ini di
+      Google Cloud Console: aktifkan hanya
+      <strong>PageSpeed Insights API</strong>, dan pertimbangkan batasan
+      kuota harian supaya aman dari penyalahgunaan bila key ini bocor.
+    </div>
+
+    <label class="msp-field">
+      API Key
+      <input type="password" id="mspApiKey" placeholder="AIza...">
+    </label>
+
+    <div class="msp-actions">
+      <button id="mspToggleKey" class="msp-secondary-btn" type="button">Tampilkan</button>
+      <button id="mspSaveKey" class="msp-primary-btn" type="button">Simpan</button>
+      <button id="mspClearKey" class="msp-secondary-btn" type="button">Hapus</button>
+    </div>
+
+    <p id="mspStatus" class="msp-status" hidden></p>
+
+    <p class="msp-hint">
+      Belum punya API key? Buat lewat
+      <a href="https://console.cloud.google.com/apis/library/pagespeedonline.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud Console &rarr; PageSpeed Insights API</a>,
+      lalu buat kredensial API key di halaman
+      <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Credentials</a>.
+    </p>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>

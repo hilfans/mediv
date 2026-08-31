@@ -1,0 +1,181 @@
+:root {
+  --msp-navy: #14204a;
+  --msp-amber: #f59e0b;
+  --msp-canvas: #f8fafc;
+  --msp-card: #ffffff;
+  --msp-border: #e2e8f0;
+  --msp-text: #334155;
+  --msp-muted: #64748b;
+  --msp-pass: #15803d;
+  --msp-pass-bg: #f0fdf4;
+  --msp-fail: #b91c1c;
+  --msp-fail-bg: #fef2f2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--msp-canvas);
+  color: var(--msp-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+.msp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  background: var(--msp-navy);
+  color: #fff;
+}
+
+.msp-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.msp-header h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.msp-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #c7d2fe;
+}
+
+.msp-card {
+  max-width: 560px;
+  margin: 28px auto;
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 14px;
+  padding: 24px 26px;
+}
+
+.msp-card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--msp-navy);
+}
+
+.msp-desc {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+}
+
+.msp-warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #92400e;
+  margin-bottom: 18px;
+}
+
+.msp-warning code {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.msp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.msp-field input {
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--msp-border);
+  background: var(--msp-canvas);
+}
+
+.msp-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.msp-primary-btn {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--msp-amber);
+  color: var(--msp-navy);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.msp-primary-btn:hover {
+  background: #ffb72b;
+}
+
+.msp-secondary-btn {
+  padding: 9px 16px;
+  border: 1px solid var(--msp-border);
+  border-radius: 10px;
+  background: var(--msp-card);
+  color: var(--msp-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.msp-secondary-btn:hover {
+  background: var(--msp-canvas);
+}
+
+.msp-status {
+  margin: 14px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.msp-status.ok {
+  background: var(--msp-pass-bg);
+  color: var(--msp-pass);
+}
+
+.msp-status.error {
+  background: var(--msp-fail-bg);
+  color: var(--msp-fail);
+}
+
+.msp-hint {
+  margin: 18px 0 0;
+  font-size: 12px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+}
+
+.msp-hint a {
+  color: var(--msp-navy);
+  font-weight: 700;
+}

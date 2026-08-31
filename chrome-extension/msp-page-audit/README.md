@@ -76,12 +76,55 @@ benar-benar mengklik "Setuju & Lanjutkan" pada modal konfirmasi, BUKAN saat
 ekstensi pertama kali dipasang. Kalau pengguna menolak, fitur crawl
 dibatalkan tapi audit satu halaman di popup tetap berfungsi normal.
 
+## Cakupan v3 — Cek Kecepatan (Google Lighthouse asli)
+
+Dibuka lewat tombol **"Cek Kecepatan (Google Lighthouse)"** di popup atau
+laporan lengkap (`speed.html`). Berbeda dari audit v1/v2 yang memakai
+heuristik internal ekstensi, fitur ini memanggil **PageSpeed Insights API
+v5** milik Google secara langsung, sehingga hasilnya adalah skor Lighthouse
+asli — persis seperti yang tampil di
+[pagespeed.web.dev](https://pagespeed.web.dev).
+
+- Skor 4 kategori (Performance, SEO, Accessibility, Best Practices).
+- Core Web Vitals data lab (LCP, CLS, TBT, FCP, Speed Index, TTI) dengan
+  status good/needs-improvement/poor sesuai ambang batas resmi Google.
+- Core Web Vitals data lapangan (CrUX, dari pengguna nyata) kalau
+  tersedia — situs dengan traffic kecil biasanya tidak punya data ini,
+  dan itu wajar, bukan tanda kegagalan.
+- Daftar peluang perbaikan performa terbesar (opportunities), diurutkan
+  dari potensi penghematan waktu paling besar.
+- Bisa pilih strategi Mobile atau Desktop.
+- Diekspor ke PDF dengan cara yang sama (`window.print()`).
+
+Sesuai namanya, fitur ini ditujukan untuk **landing page/homepage**
+(satu URL), bukan crawl banyak halaman — memanggil PSI API untuk ratusan
+halaman sekaligus akan sangat lambat dan boros kuota API.
+
+### API Key (wajib disiapkan sendiri oleh pengguna)
+
+Fitur ini butuh API key PageSpeed Insights pribadi, diatur lewat halaman
+**Options** ekstensi (klik kanan ikon ekstensi &rarr; Options, atau tombol
+"Atur API Key" di `speed.html`). **API key TIDAK PERNAH ditulis di kode
+sumber ekstensi ini** — kalau ditulis di kode, key itu akan ikut ter-commit
+ke repository dan terlihat oleh siapa pun yang membaca/meng-install
+ekstensinya. Key disimpan hanya di `chrome.storage.local` milik masing-masing
+pengguna, dan dipakai langsung dari browser mereka ke Google — tidak lewat
+server PT MSP.
+
+Disarankan membatasi API key di Google Cloud Console: aktifkan hanya
+**PageSpeed Insights API**, dan tambahkan batasan kuota harian supaya
+dampaknya terbatas kalau key sampai bocor.
+
 ## Izin yang dipakai
 
 - `activeTab`, `scripting`, `storage` — wajib, terpasang sejak instalasi,
   tanpa dialog peringatan khusus.
 - `http://*/*`, `https://*/*` — **opsional**, baru diminta saat pengguna
-  mengaktifkan fitur Crawl Situs (lihat di atas).
+  mengaktifkan fitur Crawl Situs.
+- `https://www.googleapis.com/*` — **opsional**, baru diminta saat
+  pengguna pertama kali menjalankan fitur Cek Kecepatan. Dipisah dari
+  permission crawl di atas supaya tiap fitur punya jejak izin sendiri
+  yang jelas alasannya.
 
 ## Arsitektur kode
 
@@ -93,6 +136,12 @@ dibatalkan tapi audit satu halaman di popup tetap berfungsi normal.
   `fetch` langsung karena sudah punya optional host permission. Memakai
   ulang `mspEvaluate()` dari `report-model.js` untuk menilai tiap halaman
   hasil crawl secara konsisten dengan audit satu halaman.
+- `speed-model.js` — fungsi murni untuk menyusun URL permintaan PSI API
+  dan mem-parsing responsnya (skor kategori, metrik lab/lapangan, daftar
+  opportunity). Tidak menyentuh DOM/chrome.* sama sekali, supaya mudah
+  diuji dan supaya jelas tidak ada API key yang tertanam di dalamnya.
+- `options.html`/`options.js` — halaman Options standar Chrome untuk
+  menyimpan API key PSI di `chrome.storage.local`.
 
 ## Cara memasang untuk pengujian (mode developer)
 

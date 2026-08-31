@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cek Kecepatan — MSP Page Audit</title>
+  <link rel="stylesheet" href="speed.css">
+</head>
+<body>
+  <div class="msp-toolbar msp-no-print">
+    <div class="msp-toolbar-inner">
+      <img src="icons/icon32.png" alt="" class="msp-toolbar-logo">
+      <div class="msp-toolbar-title">
+        <strong>MSP Page Audit</strong>
+        <span>Cek Kecepatan (Google Lighthouse)</span>
+      </div>
+      <button id="mspOpenOptions" class="msp-secondary-btn">Atur API Key</button>
+      <button id="mspDownloadPdf" class="msp-download-btn" hidden>Unduh sebagai PDF</button>
+    </div>
+  </div>
+
+  <main class="msp-speed-page">
+
+    <section id="mspNoKeyState" class="msp-setup-card" hidden>
+      <h1>API Key Belum Diatur</h1>
+      <p class="msp-setup-desc">
+        Fitur ini memanggil <strong>PageSpeed Insights API</strong> milik
+        Google (Lighthouse asli), yang butuh API key pribadi Anda. Key
+        tersimpan hanya di perangkat ini, tidak pernah dikirim ke server
+        PT MSP.
+      </p>
+      <button id="mspGoToOptions" class="msp-primary-btn">Atur API Key Sekarang</button>
+    </section>
+
+    <section id="mspSetupForm" class="msp-setup-card">
+      <h1>Cek Kecepatan Landing Page</h1>
+      <p class="msp-setup-desc">
+        Mengambil skor Performance, SEO, Accessibility, dan Best Practices
+        langsung dari Google Lighthouse untuk satu URL (disarankan untuk
+        landing page / homepage, bukan seluruh situs).
+      </p>
+
+      <label class="msp-field">
+        URL landing page
+        <input type="url" id="mspTargetUrl" placeholder="https://www.msp.web.id">
+      </label>
+
+      <fieldset class="msp-strategy-group">
+        <legend>Strategi</legend>
+        <label class="msp-radio-inline"><input type="radio" name="mspStrategy" value="mobile" checked> Mobile</label>
+        <label class="msp-radio-inline"><input type="radio" name="mspStrategy" value="desktop"> Desktop</label>
+      </fieldset>
+
+      <button id="mspRunCheck" class="msp-primary-btn">Jalankan Cek Kecepatan</button>
+    </section>
+
+    <section id="mspLoading" class="msp-loading-card" hidden>
+      <div class="msp-spinner" aria-hidden="true"></div>
+      <p>Memanggil Google PageSpeed Insights&hellip; biasanya 15&ndash;30 detik.</p>
+    </section>
+
+    <section id="mspErrorState" class="msp-error-card" hidden>
+      <p id="mspErrorText"></p>
+      <button id="mspRetry" class="msp-secondary-btn">Coba Lagi</button>
+    </section>
+
+    <section id="mspResults" class="msp-results" hidden>
+      <header class="msp-report-header">
+        <div class="msp-report-header-brand">
+          <img src="icons/icon48.png" alt="" class="msp-report-logo">
+          <div>
+            <h1>Laporan Kecepatan Halaman</h1>
+            <p class="msp-report-sub">
+              <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer">PT Mitra Solusindo Pratama &middot; msp.web.id</a>
+            </p>
+          </div>
+        </div>
+        <dl class="msp-report-meta">
+          <div><dt>URL</dt><dd id="mspResultUrl">-</dd></div>
+          <div><dt>Strategi</dt><dd id="mspResultStrategy">-</dd></div>
+          <div><dt>Tanggal</dt><dd id="mspResultDate">-</dd></div>
+        </dl>
+      </header>
+
+      <section class="msp-category-scores" id="mspCategoryScores"></section>
+
+      <section class="msp-crawl-block">
+        <h2>Core Web Vitals &mdash; Data Lab (Lighthouse)</h2>
+        <div class="msp-metrics-grid" id="mspLabMetrics"></div>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h2>Core Web Vitals &mdash; Data Lapangan (Pengguna Nyata)</h2>
+        <div id="mspFieldMetricsWrap"></div>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h2>Peluang Perbaikan Terbesar</h2>
+        <div id="mspOpportunities"></div>
+      </section>
+
+      <button id="mspNewCheck" class="msp-secondary-btn msp-no-print">Cek URL Lain</button>
+
+      <footer class="msp-report-footer">
+        Data performa berasal langsung dari
+        <a href="https://developers.google.com/speed/docs/insights/v5/about" target="_blank" rel="noopener noreferrer">Google PageSpeed Insights API v5</a>
+        (Lighthouse). Laporan ini dibuat oleh ekstensi <strong>MSP Page Audit</strong>,
+        layanan digital dari Divisi Electronic Business
+        <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer"><strong>PT Mitra Solusindo Pratama</strong></a>.
+      </footer>
+    </section>
+  </main>
+
+  <script src="speed-model.js"></script>
+  <script src="speed.js"></script>
+</body>
+</html>
