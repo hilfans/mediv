@@ -18,7 +18,37 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   (Schema Markup)** yang diperkuat: mengecek apakah tipe skema yang
   ditemukan termasuk tipe penting untuk bot AI (ChatGPT/Perplexity) dan
   Google seperti `Organization`, `WebSite`, `Article`, atau `Product`.
-- **Gambar**: total gambar & yang tanpa atribut `alt`.
+  Laporan lengkap menampilkan detail yang bisa dipakai admin mengecek typo
+  langsung, bukan cuma ringkasan lolos/tidak:
+  - **Open Graph**: nilai asli tiap tag (`og:title`, `og:description`,
+    `og:image`, `og:url`, `og:site_name`, `og:type`) ditampilkan apa
+    adanya, dengan peringatan otomatis kalau `og:image` memakai URL
+    relatif (berisiko gagal dibaca Facebook/LinkedIn) atau `og:title`
+    berbeda dari tag `<title>` halaman.
+  - **JSON-LD**: dipecah per blok (bukan digabung), menampilkan properti
+    kunci sesuai tipenya (`name`, `url`, `logo`, `author`, `address`, dst.),
+    mendeteksi **typo kapitalisasi pada `@type`** (mis. `organization`
+    yang mestinya `Organization` — schema.org sensitif huruf besar/kecil),
+    dan kalau ada blok yang gagal di-parse, menunjukkan nomor bloknya
+    plus pesan error `JSON.parse` yang sebenarnya supaya mudah dilacak.
+  - **Crawler AI Bot (robots.txt)**: mengecek apakah `robots.txt`
+    memblokir crawler AI utama (`GPTBot`, `ChatGPT-User`, `ClaudeBot`,
+    `anthropic-ai`, `PerplexityBot`, `CCBot`, `Google-Extended`,
+    `Bytespider`, `Applebot-Extended`) — baik lewat aturan spesifik agen
+    maupun lewat `Disallow: /` di `User-agent: *` yang tidak dikecualikan
+    untuk bot tersebut. Relevan karena ini menentukan apakah situs bisa
+    dikutip ChatGPT/Perplexity/dll saat pengguna bertanya tentang bisnis
+    terkait.
+- **Gambar**: total gambar & yang tanpa atribut `alt`. Kalau ada temuan,
+  laporan lengkap menampilkan daftar gambar yang bermasalah (URL gambar +
+  "bagian" halaman tempat gambar itu berada, diambil dari `figcaption`
+  atau heading terdekat sebelumnya) supaya admin tidak perlu menebak
+  gambar mana yang dimaksud — dibatasi 40 entri per halaman biar laporan
+  tidak membengkak di halaman dengan ratusan gambar. Untuk **Crawl
+  Situs**, temuan ini digabung lintas halaman jadi satu tabel (URL
+  halaman + URL gambar + bagian) baik di layar `crawl.html` maupun di
+  laporan PDF gabungan, supaya langsung kelihatan gambar mana ada di
+  halaman mana.
 - **Keamanan**: HTTPS, HSTS, X-Content-Type-Options, proteksi clickjacking
   (X-Frame-Options / CSP frame-ancestors), Content-Security-Policy.
 - **Performa & caching**: Cache-Control/Expires, Content-Encoding (kompresi).
@@ -211,8 +241,17 @@ semua kasus.
 - **DA (Domain Authority), backlink, dan traffic** sengaja tidak
   disertakan — data ini hanya ada di database proprietary Moz/Ahrefs/SEMrush
   dan butuh API berbayar pihak ketiga (sudah dibahas terpisah).
-- Deteksi JSON-LD bersifat ringan (jumlah blok & tipe), bukan validator
-  penuh terhadap spesifikasi schema.org.
+- Deteksi JSON-LD menampilkan properti kunci per blok dan mendeteksi typo
+  kapitalisasi `@type` terhadap daftar tipe umum (`MSP_KNOWN_SCHEMA_TYPES`
+  di `report-model.js`, sekitar 30 tipe paling sering dipakai) — bukan
+  validator penuh terhadap seluruh spesifikasi schema.org (yang punya
+  ratusan tipe). Tipe di luar daftar itu ditampilkan apa adanya, tidak
+  otomatis dianggap salah.
+- Deteksi crawler AI di robots.txt pakai daftar bot yang dikurasi manual
+  (`MSP_AI_BOT_AGENTS`), bukan daftar lengkap semua bot AI yang pernah
+  ada — dan pencocokan grup `User-agent` disederhanakan (satu agen per
+  baris `User-agent`, bukan grup multi-agen penuh sesuai spesifikasi),
+  konsisten dengan penyederhanaan `Disallow` prefix-match yang sudah ada.
 - Crawl v2 bukan crawler penuh ala mesin pencari: konkurensi & jeda antar
   request dibuat tetap (bukan makin agresif di tingkat Heavy/Ultra — cuma
   jumlah halamannya yang beda), dan link ke aset non-HTML (PDF, gambar,

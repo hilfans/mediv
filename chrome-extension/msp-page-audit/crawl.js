@@ -179,6 +179,23 @@ function renderResults(crawlResult, generatedAt) {
     }).join("");
   }
 
+  document.getElementById("mspMissingAltCount").textContent = agg.missingAltFindings.length;
+  if (agg.missingAltFindings.length === 0) {
+    document.getElementById("mspMissingAltEmpty").hidden = false;
+    document.querySelector("#mspMissingAltTable tbody").innerHTML = "";
+  } else {
+    document.getElementById("mspMissingAltEmpty").hidden = true;
+    document.querySelector("#mspMissingAltTable tbody").innerHTML = agg.missingAltFindings.map(function (f) {
+      return (
+        "<tr>" +
+          '<td class="msp-url-cell"><a href="' + escapeHtml(f.page) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(f.page) + "</a></td>" +
+          '<td class="msp-url-cell"><a href="' + escapeHtml(f.src) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(f.src) + "</a></td>" +
+          "<td>" + (f.section ? escapeHtml(f.section) : "-") + "</td>" +
+        "</tr>"
+      );
+    }).join("");
+  }
+
   var hostname = crawlResult.origin;
   try { hostname = new URL(crawlResult.origin).hostname; } catch (e) { /* biarkan default */ }
   document.title = "Laporan Crawl - " + hostname;

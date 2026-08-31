@@ -112,12 +112,123 @@ function renderLinkBreakdown(extra) {
   );
 }
 
+// Tabel field OG yang ditampilkan urut prioritas -- title/description/image
+// adalah 3 tag "utama" yang dipakai untuk skor pass/warn baris ini; url dan
+// siteName ditampilkan sebagai info tambahan (sering typo/kelupaan).
+var OG_FIELD_LABELS = [
+  { key: "title", label: "og:title" },
+  { key: "description", label: "og:description" },
+  { key: "image", label: "og:image" },
+  { key: "url", label: "og:url" },
+  { key: "siteName", label: "og:site_name" },
+  { key: "type", label: "og:type" }
+];
+
+function renderOgDetail(og) {
+  var rows = OG_FIELD_LABELS.map(function (f) {
+    var value = og[f.key];
+    var cls = value ? "filled" : "empty";
+    return (
+      '<div class="msp-og-row ' + cls + '">' +
+        '<span class="msp-og-tag">' + escapeHtml(f.label) + "</span>" +
+        '<span class="msp-og-value">' + (value ? escapeHtml(value) : "(tidak ditemukan)") + "</span>" +
+      "</div>"
+    );
+  }).join("");
+  return '<div class="msp-og-detail">' + rows + "</div>";
+}
+
+// Field yang paling sering dicek admin per tipe schema.org -- lihat
+// mspSummarizeSchemaItem() di report-model.js untuk daftar lengkap yang
+// mungkin muncul di sini.
+var JSONLD_FIELD_LABELS = {
+  name: "name", url: "url", logo: "logo", image: "image", headline: "headline",
+  author: "author", datePublished: "datePublished", telephone: "telephone",
+  sameAs: "sameAs", address: "address"
+};
+
+function renderJsonLdDetail(blocks) {
+  if (!blocks || !blocks.length) { return ""; }
+  var html = blocks.map(function (block) {
+    if (block.error) {
+      return (
+        '<div class="msp-jsonld-block has-error">' +
+          '<div class="msp-jsonld-block-head">Blok #' + block.index + " -- gagal di-parse</div>" +
+          '<div class="msp-jsonld-parse-error">' + escapeHtml(block.error) + "</div>" +
+        "</div>"
+      );
+    }
+    if (!block.items.length) {
+      return (
+        '<div class="msp-jsonld-block">' +
+          '<div class="msp-jsonld-block-head">Blok #' + block.index + " -- tidak ada @type terbaca</div>" +
+        "</div>"
+      );
+    }
+    var itemsHtml = block.items.map(function (item) {
+      var typeLabel = escapeHtml(item.type);
+      var typoHtml = item.typoSuggestion
+        ? ' <span class="msp-jsonld-typo">kemungkinan typo, mestinya "' + escapeHtml(item.typoSuggestion) + '"</span>'
+        : "";
+      var fieldKeys = Object.keys(item.fields || {});
+      var fieldsHtml = fieldKeys.length
+        ? '<dl class="msp-jsonld-fields">' + fieldKeys.map(function (k) {
+            var label = JSONLD_FIELD_LABELS[k] || k;
+            return "<div><dt>" + escapeHtml(label) + "</dt><dd>" + escapeHtml(item.fields[k]) + "</dd></div>";
+          }).join("") + "</dl>"
+        : '<p class="msp-jsonld-empty-fields">Tidak ada properti umum (name/url/dst.) yang terbaca pada item ini.</p>';
+      return (
+        '<div class="msp-jsonld-item">' +
+          '<div class="msp-jsonld-item-type">' + typeLabel + typoHtml + "</div>" +
+          fieldsHtml +
+        "</div>"
+      );
+    }).join("");
+    return (
+      '<div class="msp-jsonld-block">' +
+        '<div class="msp-jsonld-block-head">Blok #' + block.index + "</div>" +
+        itemsHtml +
+      "</div>"
+    );
+  }).join("");
+  return '<details class="msp-jsonld-detail"><summary>Lihat rincian ' + blocks.length + " blok JSON-LD</summary>" + html + "</details>";
+}
+
+function renderMissingAltImages(extra) {
+  var items = extra.items || [];
+  if (!items.length) { return ""; }
+  var rows = items.map(function (img) {
+    return (
+      "<li>" +
+        '<a href="' + escapeHtml(img.src) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(img.src) + "</a>" +
+        (img.section ? ' <span class="msp-missingalt-section">-- bagian: "' + escapeHtml(img.section) + '"</span>' : "") +
+      "</li>"
+    );
+  }).join("");
+  var truncatedNote = extra.total > items.length
+    ? '<p class="msp-missingalt-truncated">Menampilkan ' + items.length + " dari " + extra.total + " gambar (dibatasi supaya laporan tidak terlalu panjang).</p>"
+    : "";
+  return (
+    '<details class="msp-missingalt-detail">' +
+      "<summary>Lihat " + items.length + " gambar tanpa alt</summary>" +
+      "<ul>" + rows + "</ul>" +
+      truncatedNote +
+    "</details>"
+  );
+}
+
 function renderRow(r) {
   var extraHtml = "";
   if (r.extra && r.extra.type === "heading-outline") {
     extraHtml = renderHeadingOutline(r.extra.items);
   } else if (r.extra && r.extra.type === "link-breakdown") {
     extraHtml = renderLinkBreakdown(r.extra);
+  } else if (r.extra && r.extra.type === "og-detail") {
+    extraHtml = renderOgDetail(r.extra.og);
+  } else if (r.extra && r.extra.type === "jsonld-detail") {
+    extraHtml = renderJsonLdDetail(r.extra.blocks);
+  } else if (r.extra && r.extra.type === "missing-alt-images") {
+    extraHtml = renderMissingAltImages(r.extra);
   }
   return (
     '<div class="msp-row">' +
@@ -251,6 +362,23 @@ function renderCrawlSection(crawlData) {
           '<td class="msp-url-cell">' + escapeHtml(r.from) + "</td>" +
           '<td class="msp-url-cell">' + escapeHtml(r.to) + "</td>" +
           '<td><span class="msp-status-chip warn">' + r.status + "</span></td>" +
+        "</tr>"
+      );
+    }).join("");
+  }
+
+  document.getElementById("mspCrawlMissingAltCount").textContent = agg.missingAltFindings.length;
+  if (agg.missingAltFindings.length === 0) {
+    document.getElementById("mspCrawlMissingAltEmpty").hidden = false;
+    document.querySelector("#mspCrawlMissingAltTable tbody").innerHTML = "";
+  } else {
+    document.getElementById("mspCrawlMissingAltEmpty").hidden = true;
+    document.querySelector("#mspCrawlMissingAltTable tbody").innerHTML = agg.missingAltFindings.map(function (f) {
+      return (
+        "<tr>" +
+          '<td class="msp-url-cell"><a href="' + escapeHtml(f.page) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(f.page) + "</a></td>" +
+          '<td class="msp-url-cell"><a href="' + escapeHtml(f.src) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(f.src) + "</a></td>" +
+          "<td>" + (f.section ? escapeHtml(f.section) : "-") + "</td>" +
         "</tr>"
       );
     }).join("");

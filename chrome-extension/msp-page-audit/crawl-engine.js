@@ -21,11 +21,21 @@ function mspNormalizeUrl(url) {
   }
 }
 
+// Crawler AI yang paling relevan saat ini untuk menilai apakah situs bisa
+// "dikutip" ChatGPT/Perplexity/dll -- bukan daftar lengkap semua bot AI
+// yang ada, cuma yang paling umum.
+var MSP_AI_BOT_AGENTS = ["gptbot", "chatgpt-user", "claudebot", "anthropic-ai", "perplexitybot", "ccbot", "google-extended", "bytespider", "applebot-extended"];
+
 function mspParseRobotsTxt(text) {
   var lines = text.split(/\r?\n/);
   var sitemaps = [];
   var disallowRules = [];
   var wildcardAgent = false;
+  var disallowAllForWildcard = false;
+
+  var aiBotSeen = {};
+  MSP_AI_BOT_AGENTS.forEach(function (a) { aiBotSeen[a] = { mentioned: false, disallowAll: false }; });
+  var currentAgent = "";
 
   lines.forEach(function (line) {
     var l = line.trim();
@@ -36,15 +46,28 @@ function mspParseRobotsTxt(text) {
     }
     if (lower.indexOf("user-agent:") === 0) {
       wildcardAgent = lower.indexOf("*") !== -1;
+      currentAgent = lower.substring(11).trim();
+      if (aiBotSeen[currentAgent]) { aiBotSeen[currentAgent].mentioned = true; }
       return;
     }
     if (wildcardAgent && lower.indexOf("disallow:") === 0) {
       var rule = l.substring(9).trim();
       if (rule) { disallowRules.push(rule); }
+      if (rule === "/") { disallowAllForWildcard = true; }
+    }
+    if (currentAgent && aiBotSeen[currentAgent] && lower.indexOf("disallow:") === 0) {
+      if (l.substring(9).trim() === "/") { aiBotSeen[currentAgent].disallowAll = true; }
     }
   });
 
-  return { sitemaps: sitemaps, disallowRules: disallowRules };
+  // Aturan spesifik-agen menang atas wildcard "*" (sesuai spesifikasi
+  // robots.txt): bot yang disebut eksplisit tapi TIDAK di-Disallow "/" tetap
+  // diizinkan meski "*" memblokir semua.
+  var aiBots = MSP_AI_BOT_AGENTS.map(function (a) {
+    return { agent: a, blocked: aiBotSeen[a].disallowAll || (disallowAllForWildcard && !aiBotSeen[a].mentioned) };
+  });
+
+  return { sitemaps: sitemaps, disallowRules: disallowRules, aiBots: aiBots };
 }
 
 /**
@@ -60,7 +83,7 @@ function mspIsDisallowed(pathname, disallowRules) {
 }
 
 async function mspFetchRobotsAndSitemap(origin, fetchImpl) {
-  var result = { sitemaps: [], disallowRules: [], robotsPresent: false };
+  var result = { sitemaps: [], disallowRules: [], aiBots: [], robotsPresent: false };
   try {
     var resp = await fetchImpl(origin + "/robots.txt", { cache: "no-store" });
     if (resp.ok) {
@@ -69,6 +92,7 @@ async function mspFetchRobotsAndSitemap(origin, fetchImpl) {
       var parsed = mspParseRobotsTxt(text);
       result.sitemaps = parsed.sitemaps;
       result.disallowRules = parsed.disallowRules;
+      result.aiBots = parsed.aiBots;
     }
   } catch (e) { /* robots.txt tidak wajib ada */ }
   return result;
@@ -164,36 +188,92 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
     lastLevel = level;
   });
 
+  // Sama seperti mspExtractDomSignals (report-model.js): cari label lokasi
+  // gambar (figcaption, atau heading terdekat sebelumnya) supaya admin bisa
+  // menemukan gambar mana yang dimaksud di halaman hasil crawl.
+  var MSP_MISSING_ALT_CAP = 40;
+  function nearestSectionLabel(el) {
+    var figure = el.closest ? el.closest("figure") : null;
+    if (figure) {
+      var figcaption = figure.querySelector("figcaption");
+      if (figcaption && figcaption.textContent.trim()) {
+        return figcaption.textContent.trim().slice(0, 80);
+      }
+    }
+    var node = el;
+    while (node) {
+      var prev = node.previousElementSibling;
+      while (prev) {
+        if (/^H[1-6]$/.test(prev.tagName)) { return prev.textContent.trim().slice(0, 80); }
+        prev = prev.previousElementSibling;
+      }
+      node = node.parentElement;
+    }
+    return "";
+  }
+
   var images = doc.querySelectorAll("img");
   var missingAltCount = 0;
+  var missingAltImages = [];
   images.forEach(function (img) {
     var alt = img.getAttribute("alt");
-    if (alt === null || alt.trim() === "") { missingAltCount += 1; }
+    if (alt === null || alt.trim() === "") {
+      missingAltCount += 1;
+      if (missingAltImages.length < MSP_MISSING_ALT_CAP) {
+        var src = img.getAttribute("src") || img.getAttribute("data-src") || "";
+        var absSrc = src;
+        try { absSrc = src ? new URL(src, pageUrl).href : "(tanpa atribut src)"; } catch (e) { absSrc = src || "(tanpa atribut src)"; }
+        missingAltImages.push({ src: absSrc, section: nearestSectionLabel(img) });
+      }
+    }
   });
 
   var og = {
     title: metaByProperty("og:title"),
     description: metaByProperty("og:description"),
     image: metaByProperty("og:image"),
-    type: metaByProperty("og:type")
+    type: metaByProperty("og:type"),
+    url: metaByProperty("og:url"),
+    siteName: metaByProperty("og:site_name")
   };
   var twitterCard = metaByName("twitter:card");
 
   var jsonLdNodes = doc.querySelectorAll('script[type="application/ld+json"]');
   var jsonLdTypes = [];
   var jsonLdErrors = 0;
-  jsonLdNodes.forEach(function (node) {
+  var jsonLdBlocks = [];
+  jsonLdNodes.forEach(function (node, blockIdx) {
+    var block = { index: blockIdx + 1, error: null, hasContext: false, contextLooksValid: false, items: [] };
     try {
       var data = JSON.parse(node.textContent);
       var items = Array.isArray(data) ? data : [data];
-      items.forEach(function (item) {
-        if (item && item["@graph"] && Array.isArray(item["@graph"])) {
-          item["@graph"].forEach(function (g) { if (g && g["@type"]) { jsonLdTypes.push(g["@type"]); } });
-        } else if (item && item["@type"]) {
-          jsonLdTypes.push(item["@type"]);
+      var ctxCarrier = items[0];
+      if (ctxCarrier && ctxCarrier["@context"] !== undefined) {
+        block.hasContext = true;
+        block.contextLooksValid = /schema\.org/i.test(String(ctxCarrier["@context"]));
+      }
+      items.forEach(function collectItem(item) {
+        if (!item || typeof item !== "object") { return; }
+        if (item["@graph"] && Array.isArray(item["@graph"])) {
+          item["@graph"].forEach(collectItem);
+          return;
+        }
+        var type = item["@type"];
+        if (Array.isArray(type)) { type = type[0]; }
+        if (type) {
+          jsonLdTypes.push(type);
+          block.items.push({
+            type: type,
+            typoSuggestion: mspCheckSchemaTypeSpelling(type),
+            fields: mspSummarizeSchemaItem(item)
+          });
         }
       });
-    } catch (e) { jsonLdErrors += 1; }
+    } catch (e) {
+      jsonLdErrors += 1;
+      block.error = String((e && e.message) || e);
+    }
+    jsonLdBlocks.push(block);
   });
 
   // Dokumen hasil parse DOMParser tidak punya layout, jadi innerText selalu
@@ -235,11 +315,13 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
     skippedHeadingLevel: skippedHeadingLevel,
     totalImages: images.length,
     missingAltCount: missingAltCount,
+    missingAltImages: missingAltImages,
     og: og,
     twitterCard: twitterCard,
     jsonLdCount: jsonLdNodes.length,
     jsonLdTypes: jsonLdTypes,
     jsonLdErrors: jsonLdErrors,
+    jsonLdBlocks: jsonLdBlocks,
     wordCount: wordCount,
     internalLinks: internalLinks,
     externalLinks: externalLinks
@@ -299,6 +381,7 @@ async function mspFetchAndAnalyzePage(url, siteRobots, fetchImpl) {
         present: siteRobots.robotsPresent,
         sitemaps: siteRobots.sitemaps,
         disallowsAll: siteRobots.disallowRules.indexOf("/") !== -1,
+        aiBots: siteRobots.aiBots || [],
         error: null
       },
       sitemapXml: { checked: true, present: siteRobots.sitemaps.length > 0, error: null }

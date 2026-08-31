@@ -353,6 +353,166 @@ body {
   }
 }
 
+/* ---------- Rincian Open Graph, JSON-LD, gambar tanpa alt ---------- */
+
+.msp-og-detail {
+  margin-top: 8px;
+  border: 1px solid var(--msp-border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.msp-og-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--msp-border);
+}
+
+.msp-og-row:last-child { border-bottom: 0; }
+
+.msp-og-tag {
+  font-weight: 700;
+  color: var(--msp-muted);
+}
+
+.msp-og-row.empty .msp-og-value {
+  color: var(--msp-warn);
+  font-style: italic;
+}
+
+.msp-og-value {
+  word-break: break-word;
+}
+
+.msp-jsonld-detail {
+  margin-top: 8px;
+}
+
+.msp-jsonld-detail summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--msp-navy);
+}
+
+.msp-jsonld-block {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--msp-border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.msp-jsonld-block.has-error {
+  border-color: #fecaca;
+  background: var(--msp-fail-bg);
+}
+
+.msp-jsonld-block-head {
+  font-weight: 700;
+  color: var(--msp-navy);
+  margin-bottom: 4px;
+}
+
+.msp-jsonld-parse-error {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--msp-fail);
+  word-break: break-word;
+}
+
+.msp-jsonld-item {
+  padding: 6px 0;
+  border-top: 1px dashed var(--msp-border);
+}
+
+.msp-jsonld-item:first-child { border-top: 0; }
+
+.msp-jsonld-item-type {
+  font-weight: 700;
+  color: var(--msp-text);
+}
+
+.msp-jsonld-typo {
+  font-weight: 700;
+  color: var(--msp-warn);
+}
+
+.msp-jsonld-fields {
+  margin: 4px 0 0;
+  display: grid;
+  gap: 3px;
+}
+
+.msp-jsonld-fields div { display: flex; gap: 8px; }
+
+.msp-jsonld-fields dt {
+  color: var(--msp-muted);
+  min-width: 90px;
+}
+
+.msp-jsonld-fields dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.msp-jsonld-empty-fields {
+  margin: 4px 0 0;
+  color: var(--msp-muted);
+  font-size: 11.5px;
+}
+
+.msp-missingalt-detail {
+  margin-top: 8px;
+}
+
+.msp-missingalt-detail summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--msp-navy);
+}
+
+.msp-missingalt-detail ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--msp-border);
+  border-radius: 8px;
+}
+
+.msp-missingalt-detail li {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--msp-border);
+  font-size: 11.5px;
+  word-break: break-all;
+}
+
+.msp-missingalt-detail li:last-child { border-bottom: 0; }
+
+.msp-missingalt-detail a {
+  color: var(--msp-navy);
+  text-decoration: none;
+}
+
+.msp-missingalt-detail a:hover { text-decoration: underline; }
+
+.msp-missingalt-section {
+  color: var(--msp-muted);
+  font-style: italic;
+}
+
+.msp-missingalt-truncated {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--msp-muted);
+}
+
 /* ---------- Skor keseluruhan ---------- */
 
 .msp-score-overview {
@@ -833,8 +993,11 @@ body {
   }
 
   /* <details> yang belum dibuka pengguna tetap harus tampil penuh di PDF,
-     supaya rincian tautan tidak hilang begitu saja saat diekspor. */
-  .msp-link-breakdown summary {
+     supaya rincian tautan/JSON-LD/gambar tanpa alt tidak hilang begitu saja
+     saat diekspor. */
+  .msp-link-breakdown summary,
+  .msp-jsonld-detail summary,
+  .msp-missingalt-detail summary {
     display: none;
   }
 
@@ -842,7 +1005,8 @@ body {
     display: grid !important;
   }
 
-  .msp-link-columns ul {
+  .msp-link-columns ul,
+  .msp-missingalt-detail ul {
     max-height: none;
     overflow: visible;
   }
