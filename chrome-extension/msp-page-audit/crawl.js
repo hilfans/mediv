@@ -68,21 +68,6 @@ function phaseLabel(phase) {
   return labels[phase] || phase;
 }
 
-function aggregateCrawl(crawlResult) {
-  var overall = { pass: 0, warn: 0, fail: 0 };
-  crawlResult.pages.forEach(function (p) {
-    if (p.evaluation) {
-      overall.pass += p.evaluation.overall.counts.pass;
-      overall.warn += p.evaluation.overall.counts.warn;
-      overall.fail += p.evaluation.overall.counts.fail;
-    }
-  });
-  var score = mspScoreFromCounts(overall);
-  var brokenLinks = crawlResult.linkChecks.filter(function (l) { return !l.ok; });
-  var blockedPages = crawlResult.pages.filter(function (p) { return p.robotsDisallowed || p.hasNoindex; });
-  return { overall: overall, score: score, brokenLinks: brokenLinks, blockedPages: blockedPages };
-}
-
 function renderResults(crawlResult, generatedAt) {
   document.getElementById("mspSetupForm").hidden = true;
   document.getElementById("mspProgressSection").hidden = true;
@@ -92,7 +77,7 @@ function renderResults(crawlResult, generatedAt) {
   document.getElementById("mspResultOrigin").textContent = crawlResult.origin;
   document.getElementById("mspResultDate").textContent = formatDate(generatedAt);
 
-  var agg = aggregateCrawl(crawlResult);
+  var agg = mspAggregateCrawl(crawlResult);
 
   var tiles = [
     { label: "Halaman Di-crawl", value: crawlResult.pages.length, cls: "" },
@@ -349,7 +334,7 @@ async function init() {
   });
 
   document.getElementById("mspDownloadPdf").addEventListener("click", function () {
-    window.print();
+    window.open("report.html?autoprint=1", "_blank");
   });
 }
 

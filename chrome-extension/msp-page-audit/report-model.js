@@ -436,3 +436,23 @@ function mspEvaluate(dom, net) {
     categories: categories
   };
 }
+
+/**
+ * Dipakai bersama oleh crawl.js (tampilan Crawl Situs) dan report.js
+ * (laporan gabungan/PDF) supaya skor & daftar broken link/halaman
+ * bermasalah dihitung dengan cara yang persis sama di kedua tempat.
+ */
+function mspAggregateCrawl(crawlResult) {
+  var overall = { pass: 0, warn: 0, fail: 0 };
+  crawlResult.pages.forEach(function (p) {
+    if (p.evaluation) {
+      overall.pass += p.evaluation.overall.counts.pass;
+      overall.warn += p.evaluation.overall.counts.warn;
+      overall.fail += p.evaluation.overall.counts.fail;
+    }
+  });
+  var score = mspScoreFromCounts(overall);
+  var brokenLinks = crawlResult.linkChecks.filter(function (l) { return !l.ok; });
+  var blockedPages = crawlResult.pages.filter(function (p) { return p.robotsDisallowed || p.hasNoindex; });
+  return { overall: overall, score: score, brokenLinks: brokenLinks, blockedPages: blockedPages };
+}

@@ -146,28 +146,280 @@ function renderDetailSections(categories) {
   document.getElementById("mspDetailSections").innerHTML = html;
 }
 
-async function init() {
-  var data = await chrome.storage.local.get("mspLastAudit");
-  var model = data && data.mspLastAudit;
+/* ---------- Bagian Crawl Situs (dalam laporan gabungan) ---------- */
 
-  if (!model) {
+function renderCrawlSection(crawlData) {
+  document.getElementById("mspCrawlSection").hidden = false;
+  var crawlResult = crawlData.result;
+  document.getElementById("mspCrawlOrigin").textContent = crawlResult.origin;
+  document.getElementById("mspCrawlDate").textContent = formatDate(crawlData.generatedAt);
+
+  var agg = mspAggregateCrawl(crawlResult);
+
+  var tiles = [
+    { label: "Halaman Di-crawl", value: crawlResult.pages.length, cls: "" },
+    { label: "Skor Situs", value: agg.score + "%", cls: agg.score >= 90 ? "pass" : (agg.score >= 50 ? "warn" : "fail") },
+    { label: "Broken Link", value: agg.brokenLinks.length, cls: agg.brokenLinks.length > 0 ? "fail" : "pass" },
+    { label: "Redirect", value: crawlResult.redirects.length, cls: crawlResult.redirects.length > 0 ? "warn" : "pass" },
+    { label: "Diblokir robots.txt/noindex", value: agg.blockedPages.length, cls: agg.blockedPages.length > 0 ? "warn" : "pass" },
+    { label: "Pemeriksaan Bermasalah", value: agg.overall.fail, cls: agg.overall.fail > 0 ? "fail" : "pass" }
+  ];
+  document.getElementById("mspCrawlStatTiles").innerHTML = tiles.map(function (t) {
+    return (
+      '<div class="msp-stat-tile ' + t.cls + '">' +
+        '<div class="msp-stat-tile-label">' + escapeHtml(t.label) + "</div>" +
+        '<div class="msp-stat-tile-value">' + t.value + "</div>" +
+      "</div>"
+    );
+  }).join("");
+
+  var pagesBody = crawlResult.pages.map(function (p) {
+    var score = p.evaluation ? p.evaluation.overall.score : null;
+    var scoreCell = score === null ? "-" : score + "%";
+    var statusCls = p.status >= 200 && p.status < 400 ? "ok" : "fail";
+    var d = p.dom;
+
+    var titleCell = "-";
+    if (d) {
+      var tLen = d.title.length;
+      var tCls = !d.title ? "fail" : (tLen < 30 || tLen > 60 ? "warn" : "ok");
+      titleCell = '<span class="msp-status-chip ' + tCls + '">' + tLen + "</span> " +
+        escapeHtml(d.title ? (d.title.length > 45 ? d.title.slice(0, 45) + "…" : d.title) : "(kosong)");
+    }
+
+    var descCell = "-";
+    if (d) {
+      var dLen = d.metaDescription.length;
+      var dCls = !d.metaDescription ? "fail" : (dLen < 70 || dLen > 160 ? "warn" : "ok");
+      descCell = '<span class="msp-status-chip ' + dCls + '">' + dLen + "</span>";
+    }
+
+    var imgCell = "-";
+    if (d) {
+      var imgCls = d.missingAltCount === 0 ? "ok" : "warn";
+      imgCell = '<span class="msp-status-chip ' + imgCls + '">' +
+        (d.totalImages - d.missingAltCount) + "/" + d.totalImages + "</span>";
+    }
+
+    var notes = [];
+    if (p.robotsDisallowed) { notes.push('<span class="msp-status-chip fail">Diblokir robots.txt</span>'); }
+    if (p.hasNoindex) { notes.push('<span class="msp-status-chip fail">noindex</span>'); }
+    var notesCell = notes.length ? notes.join(" ") : "-";
+
+    return (
+      "<tr>" +
+        '<td class="msp-url-cell"><a href="' + escapeHtml(p.finalUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(p.finalUrl) + "</a></td>" +
+        '<td><span class="msp-status-chip ' + statusCls + '">' + p.status + "</span></td>" +
+        "<td>" + scoreCell + "</td>" +
+        "<td>" + titleCell + "</td>" +
+        "<td>" + descCell + "</td>" +
+        "<td>" + imgCell + "</td>" +
+        "<td>" + notesCell + "</td>" +
+      "</tr>"
+    );
+  }).join("");
+  document.querySelector("#mspCrawlPagesTable tbody").innerHTML = pagesBody;
+
+  document.getElementById("mspCrawlBrokenCount").textContent = agg.brokenLinks.length;
+  if (agg.brokenLinks.length === 0) {
+    document.getElementById("mspCrawlBrokenEmpty").hidden = false;
+    document.querySelector("#mspCrawlBrokenTable tbody").innerHTML = "";
+  } else {
+    document.getElementById("mspCrawlBrokenEmpty").hidden = true;
+    document.querySelector("#mspCrawlBrokenTable tbody").innerHTML = agg.brokenLinks.map(function (l) {
+      var found = l.foundOnPages || [];
+      var foundLabel = found.slice(0, 2).map(escapeHtml).join(", ") + (found.length > 2 ? " +" + (found.length - 2) + " lainnya" : "");
+      return (
+        "<tr>" +
+          '<td class="msp-url-cell"><a href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(l.url) + "</a></td>" +
+          '<td><span class="msp-status-chip fail">' + (l.status || "Gagal") + "</span></td>" +
+          "<td>" + foundLabel + "</td>" +
+        "</tr>"
+      );
+    }).join("");
+  }
+
+  document.getElementById("mspCrawlRedirectCount").textContent = crawlResult.redirects.length;
+  if (crawlResult.redirects.length === 0) {
+    document.getElementById("mspCrawlRedirectEmpty").hidden = false;
+    document.querySelector("#mspCrawlRedirectTable tbody").innerHTML = "";
+  } else {
+    document.getElementById("mspCrawlRedirectEmpty").hidden = true;
+    document.querySelector("#mspCrawlRedirectTable tbody").innerHTML = crawlResult.redirects.map(function (r) {
+      return (
+        "<tr>" +
+          '<td class="msp-url-cell">' + escapeHtml(r.from) + "</td>" +
+          '<td class="msp-url-cell">' + escapeHtml(r.to) + "</td>" +
+          '<td><span class="msp-status-chip warn">' + r.status + "</span></td>" +
+        "</tr>"
+      );
+    }).join("");
+  }
+}
+
+/* ---------- Bagian Cek Kecepatan / Lighthouse (dalam laporan gabungan) ---------- */
+
+var SPEED_METRIC_LABELS = {
+  lcp: "LCP",
+  cls: "CLS",
+  tbt: "TBT",
+  fcp: "FCP",
+  speedIndex: "Speed Index",
+  tti: "TTI"
+};
+var SPEED_FIELD_METRIC_LABELS = { lcp: "LCP", cls: "CLS", inp: "INP", fcp: "FCP" };
+
+// PSI API memakai istilah good/ni/poor; laporan ini memakai istilah
+// pass/warn/fail supaya konsisten secara visual dengan bagian On-Page & Crawl.
+function speedRatingClass(rating) {
+  if (rating === "good") return "pass";
+  if (rating === "ni") return "warn";
+  if (rating === "poor") return "fail";
+  return "";
+}
+
+function speedFieldCategoryClass(category) {
+  if (category === "FAST") return "pass";
+  if (category === "AVERAGE") return "warn";
+  if (category === "SLOW") return "fail";
+  return "";
+}
+
+function renderSpeedDescription(description) {
+  var segments = mspLinkifyDescription(description);
+  return segments.map(function (seg) {
+    if (seg.type === "link") {
+      var safeUrl = /^https?:\/\//i.test(seg.url) ? seg.url : "#";
+      return '<a href="' + escapeHtml(safeUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(seg.label) + "</a>";
+    }
+    return escapeHtml(seg.value);
+  }).join("");
+}
+
+function renderSpeedSection(speedData) {
+  document.getElementById("mspSpeedSection").hidden = false;
+  var parsed = speedData.parsed;
+
+  document.getElementById("mspSpeedUrl").textContent = parsed.finalUrl || speedData.targetUrl;
+  document.getElementById("mspSpeedStrategy").textContent = speedData.strategy === "desktop" ? "Desktop" : "Mobile";
+  document.getElementById("mspSpeedDate").textContent = formatDate(parsed.fetchTime || speedData.generatedAt);
+
+  var catItems = [
+    { label: "Performance", value: parsed.categories.performance },
+    { label: "SEO", value: parsed.categories.seo },
+    { label: "Accessibility", value: parsed.categories.accessibility },
+    { label: "Best Practices", value: parsed.categories.bestPractices }
+  ];
+  document.getElementById("mspSpeedCategoryScores").innerHTML = catItems.map(function (it) {
+    var band = it.value == null ? "" : scoreBand(it.value);
+    return (
+      '<div class="msp-speed-category-tile ' + band + '">' +
+        '<div class="msp-speed-category-tile-score">' + (it.value == null ? "-" : it.value) + "</div>" +
+        '<div class="msp-speed-category-tile-label">' + escapeHtml(it.label) + "</div>" +
+      "</div>"
+    );
+  }).join("");
+
+  document.getElementById("mspSpeedLabMetrics").innerHTML = Object.keys(SPEED_METRIC_LABELS).map(function (key) {
+    var m = parsed.labMetrics[key];
+    var cls = speedRatingClass(m.rating);
+    return (
+      '<div class="msp-metric-tile ' + cls + '">' +
+        '<div class="msp-metric-name">' + escapeHtml(SPEED_METRIC_LABELS[key]) + "</div>" +
+        '<div class="msp-metric-value">' + escapeHtml(m.displayValue) + "</div>" +
+      "</div>"
+    );
+  }).join("");
+
+  var fieldWrap = document.getElementById("mspSpeedFieldMetricsWrap");
+  if (!parsed.fieldMetrics) {
+    fieldWrap.innerHTML = '<p class="msp-field-empty">Data lapangan (dari pengguna nyata, Chrome UX Report) tidak tersedia untuk URL ini -- biasanya karena traffic situs belum cukup tercatat Google. Ini normal untuk situs skala kecil-menengah dan bukan tanda ada masalah.</p>';
+  } else {
+    var rows = Object.keys(SPEED_FIELD_METRIC_LABELS).map(function (key) {
+      var m = parsed.fieldMetrics[key];
+      if (!m) { return ""; }
+      var cls = speedFieldCategoryClass(m.category);
+      var unit = key === "cls" ? "" : " ms";
+      return (
+        '<div class="msp-metric-tile ' + cls + '">' +
+          '<div class="msp-metric-name">' + escapeHtml(SPEED_FIELD_METRIC_LABELS[key]) + "</div>" +
+          '<div class="msp-metric-value">' + m.percentile + unit + "</div>" +
+        "</div>"
+      );
+    }).join("");
+    fieldWrap.innerHTML = '<div class="msp-metrics-grid">' + rows + "</div>";
+  }
+
+  var oppWrap = document.getElementById("mspSpeedOpportunities");
+  if (!parsed.opportunities.length) {
+    oppWrap.innerHTML = '<p class="msp-opportunity-empty">Tidak ada peluang perbaikan performa signifikan yang terdeteksi. 🎉</p>';
+  } else {
+    oppWrap.innerHTML = parsed.opportunities.map(function (op) {
+      return (
+        '<div class="msp-opportunity">' +
+          '<div class="msp-opportunity-head">' +
+            "<span>" + escapeHtml(op.title) + "</span>" +
+            '<span class="msp-opportunity-savings">' + escapeHtml(op.displayValue || "") + "</span>" +
+          "</div>" +
+          '<p class="msp-opportunity-desc">' + renderSpeedDescription(op.description) + "</p>" +
+        "</div>"
+      );
+    }).join("");
+  }
+}
+
+async function init() {
+  var autoprint = new URLSearchParams(window.location.search).get("autoprint") === "1";
+
+  var data = await chrome.storage.local.get(["mspLastAudit", "mspLastCrawl", "mspLastSpeedCheck"]);
+  var auditModel = data.mspLastAudit;
+  var crawlData = data.mspLastCrawl;
+  var speedData = data.mspLastSpeedCheck;
+
+  if (!auditModel && !crawlData && !speedData) {
     document.getElementById("mspEmptyState").hidden = false;
     return;
   }
 
   document.getElementById("mspReportRoot").hidden = false;
-  document.getElementById("mspReportUrl").textContent = model.url;
-  document.getElementById("mspReportDate").textContent = formatDate(model.generatedAt);
 
-  renderScoreRing(model.overall.score);
-  renderCategoryScores(model.categories);
-  renderStatTiles(model.overall.counts);
-  renderDetailSections(model.categories);
+  var hostname = "halaman";
+
+  if (auditModel) {
+    document.getElementById("mspOnPageSection").hidden = false;
+    document.getElementById("mspReportUrl").textContent = auditModel.url;
+    document.getElementById("mspReportDate").textContent = formatDate(auditModel.generatedAt);
+    renderScoreRing(auditModel.overall.score);
+    renderCategoryScores(auditModel.categories);
+    renderStatTiles(auditModel.overall.counts);
+    renderDetailSections(auditModel.categories);
+    try { hostname = new URL(auditModel.url).hostname; } catch (e) { /* biarkan default */ }
+  }
+
+  if (crawlData && crawlData.result) {
+    renderCrawlSection(crawlData);
+    if (hostname === "halaman") {
+      try { hostname = new URL(crawlData.result.origin).hostname; } catch (e) { /* biarkan default */ }
+    }
+  }
+
+  if (speedData && speedData.parsed) {
+    renderSpeedSection(speedData);
+    if (hostname === "halaman") {
+      try { hostname = new URL(speedData.targetUrl).hostname; } catch (e) { /* biarkan default */ }
+    }
+  }
+
+  var generatedTimestamps = [
+    auditModel && auditModel.generatedAt,
+    crawlData && crawlData.generatedAt,
+    speedData && speedData.generatedAt
+  ].filter(Boolean).sort();
+  document.getElementById("mspReportGeneratedDate").textContent =
+    formatDate(generatedTimestamps.length ? generatedTimestamps[generatedTimestamps.length - 1] : new Date().toISOString());
 
   // Judul dokumen dipakai browser sebagai nama file default saat "Simpan sebagai PDF".
-  var hostname = "halaman";
-  try { hostname = new URL(model.url).hostname; } catch (e) { /* biarkan default */ }
-  document.title = "Laporan Audit - " + hostname;
+  document.title = "Laporan MSP Page Audit - " + hostname;
 
   var clientInput = document.getElementById("mspClientName");
   var clientRow = document.getElementById("mspReportClientRow");
@@ -176,12 +428,18 @@ async function init() {
     var val = clientInput.value.trim();
     clientRow.hidden = !val;
     clientCell.textContent = val;
-    document.title = "Laporan Audit - " + hostname + (val ? " - " + val : "");
+    document.title = "Laporan MSP Page Audit - " + hostname + (val ? " - " + val : "");
   });
 
   document.getElementById("mspDownloadPdf").addEventListener("click", function () {
     window.print();
   });
+
+  if (autoprint) {
+    // Beri waktu render/layout settle dulu sebelum memicu dialog cetak,
+    // supaya tabel/skor yang baru dirender tidak terpotong di PDF.
+    window.setTimeout(function () { window.print(); }, 300);
+  }
 }
 
 init();

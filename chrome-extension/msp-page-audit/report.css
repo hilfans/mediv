@@ -597,6 +597,213 @@ body {
   text-decoration: underline;
 }
 
+/* ---------- Judul antar-bagian laporan gabungan ---------- */
+
+.msp-section-title {
+  margin: 28px 0 14px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--msp-navy);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--msp-border);
+}
+
+.msp-section-meta {
+  margin-bottom: 18px;
+}
+
+/* ---------- Bagian Crawl Situs (tabel & kartu blok) ---------- */
+
+.msp-crawl-block {
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  break-inside: avoid;
+}
+
+.msp-crawl-block h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--msp-navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.msp-count-badge {
+  background: var(--msp-canvas);
+  border: 1px solid var(--msp-border);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--msp-text);
+}
+
+.msp-table-wrap { overflow-x: auto; }
+
+.msp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.msp-table th {
+  text-align: left;
+  padding: 7px 9px;
+  border-bottom: 2px solid var(--msp-border);
+  color: var(--msp-muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.msp-table td {
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--msp-border);
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.msp-table td.msp-url-cell a { color: var(--msp-navy); text-decoration: none; }
+.msp-table td.msp-url-cell a:hover { text-decoration: underline; }
+
+.msp-status-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.msp-status-chip.ok { background: var(--msp-pass-bg); color: var(--msp-pass); }
+.msp-status-chip.warn { background: var(--msp-warn-bg); color: var(--msp-warn); }
+.msp-status-chip.fail { background: var(--msp-fail-bg); color: var(--msp-fail); }
+
+.msp-empty-note {
+  color: var(--msp-muted);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+/* ---------- Bagian Cek Kecepatan (skor & metrik Lighthouse) ---------- */
+
+.msp-speed-category-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.msp-speed-category-tile {
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.msp-speed-category-tile-score {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.msp-speed-category-tile.pass .msp-speed-category-tile-score { color: var(--msp-pass); }
+.msp-speed-category-tile.warn .msp-speed-category-tile-score { color: var(--msp-warn); }
+.msp-speed-category-tile.fail .msp-speed-category-tile-score { color: var(--msp-fail); }
+
+.msp-speed-category-tile-label {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--msp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.msp-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.msp-metric-tile {
+  border: 1px solid var(--msp-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.msp-metric-tile.pass { background: var(--msp-pass-bg); border-color: #bbf7d0; }
+.msp-metric-tile.warn { background: var(--msp-warn-bg); border-color: #fde68a; }
+.msp-metric-tile.fail { background: var(--msp-fail-bg); border-color: #fecaca; }
+
+.msp-metric-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--msp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.msp-metric-value {
+  margin-top: 3px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--msp-text);
+}
+
+.msp-field-empty {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+}
+
+.msp-opportunity {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--msp-border);
+}
+
+.msp-opportunity:last-child { border-bottom: 0; }
+
+.msp-opportunity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.msp-opportunity-savings {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--msp-fail);
+  white-space: nowrap;
+}
+
+.msp-opportunity-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+}
+
+.msp-opportunity-desc a { color: var(--msp-navy); }
+
+.msp-opportunity-empty {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--msp-pass);
+  font-weight: 700;
+}
+
 /* ---------- Print / Ekspor PDF ---------- */
 
 @media print {

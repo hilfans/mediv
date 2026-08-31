@@ -23,13 +23,15 @@
     </div>
     <p class="msp-toolbar-hint">
       Tombol di atas membuka kotak dialog cetak browser — pilih tujuan
-      <strong>"Simpan sebagai PDF"</strong> untuk mengunduhnya.
+      <strong>"Simpan sebagai PDF"</strong> untuk mengunduhnya. Laporan ini
+      otomatis menggabungkan Audit SEO On-Page, Crawl Situs, dan Cek
+      Kecepatan — bagian mana pun yang sudah pernah Anda jalankan.
     </p>
   </div>
 
   <div id="mspEmptyState" class="msp-empty-state" hidden>
     <p>Belum ada data audit tersimpan.</p>
-    <p class="msp-empty-hint">Buka ikon ekstensi MSP Page Audit pada tab yang ingin diaudit, tunggu hasilnya muncul, lalu klik "Lihat Laporan Lengkap".</p>
+    <p class="msp-empty-hint">Buka ikon ekstensi MSP Page Audit pada tab yang ingin diaudit, tunggu hasilnya muncul, lalu klik "Lihat Laporan Lengkap" — atau jalankan Crawl Situs / Cek Kecepatan.</p>
   </div>
 
   <main id="mspReportRoot" class="msp-print-page" hidden>
@@ -37,62 +39,150 @@
       <div class="msp-report-header-brand">
         <img src="icons/icon48.png" alt="" class="msp-report-logo">
         <div>
-          <h1>Laporan Audit Halaman</h1>
+          <h1>Laporan MSP Page Audit</h1>
           <p class="msp-report-sub">
             <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer">PT Mitra Solusindo Pratama &middot; msp.web.id</a>
           </p>
         </div>
       </div>
       <dl class="msp-report-meta">
-        <div><dt>URL diaudit</dt><dd id="mspReportUrl">-</dd></div>
-        <div><dt>Tanggal</dt><dd id="mspReportDate">-</dd></div>
         <div id="mspReportClientRow" hidden><dt>Disiapkan untuk</dt><dd id="mspReportClient">-</dd></div>
+        <div><dt>Dibuat</dt><dd id="mspReportGeneratedDate">-</dd></div>
       </dl>
     </header>
 
-    <section class="msp-info-bar">
-      <div class="msp-info-item">
-        <strong>Title</strong> ideal 30&ndash;60 karakter
-      </div>
-      <div class="msp-info-item">
-        <strong>Meta description</strong> ideal 70&ndash;160 karakter
-      </div>
-      <div class="msp-legend">
-        <span><span class="msp-badge pass msp-legend-badge">&#10003;</span> Lolos</span>
-        <span><span class="msp-badge warn msp-legend-badge">!</span> Perlu perhatian</span>
-        <span><span class="msp-badge fail msp-legend-badge">&#10005;</span> Bermasalah</span>
-        <span><span class="msp-badge info msp-legend-badge">i</span> Informasi (bukan pass/fail)</span>
-      </div>
-    </section>
+    <section id="mspOnPageSection" hidden>
+      <h2 class="msp-section-title">Audit SEO On-Page</h2>
+      <dl class="msp-report-meta msp-section-meta">
+        <div><dt>URL diaudit</dt><dd id="mspReportUrl">-</dd></div>
+        <div><dt>Tanggal</dt><dd id="mspReportDate">-</dd></div>
+      </dl>
 
-    <section class="msp-score-overview">
-      <div class="msp-score-ring-wrap">
-        <svg viewBox="0 0 120 120" class="msp-score-ring" aria-hidden="true">
-          <circle cx="60" cy="60" r="52" class="msp-score-ring-bg"></circle>
-          <circle cx="60" cy="60" r="52" class="msp-score-ring-fg" id="mspScoreRingFg"></circle>
-        </svg>
-        <div class="msp-score-ring-label">
-          <span id="mspOverallScore">0</span><span class="msp-score-percent">%</span>
+      <section class="msp-info-bar">
+        <div class="msp-info-item">
+          <strong>Title</strong> ideal 30&ndash;60 karakter
         </div>
-        <p class="msp-score-caption">Skor Keseluruhan</p>
-      </div>
+        <div class="msp-info-item">
+          <strong>Meta description</strong> ideal 70&ndash;160 karakter
+        </div>
+        <div class="msp-legend">
+          <span><span class="msp-badge pass msp-legend-badge">&#10003;</span> Lolos</span>
+          <span><span class="msp-badge warn msp-legend-badge">!</span> Perlu perhatian</span>
+          <span><span class="msp-badge fail msp-legend-badge">&#10005;</span> Bermasalah</span>
+          <span><span class="msp-badge info msp-legend-badge">i</span> Informasi (bukan pass/fail)</span>
+        </div>
+      </section>
 
-      <div class="msp-category-scores" id="mspCategoryScores"></div>
+      <section class="msp-score-overview">
+        <div class="msp-score-ring-wrap">
+          <svg viewBox="0 0 120 120" class="msp-score-ring" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" class="msp-score-ring-bg"></circle>
+            <circle cx="60" cy="60" r="52" class="msp-score-ring-fg" id="mspScoreRingFg"></circle>
+          </svg>
+          <div class="msp-score-ring-label">
+            <span id="mspOverallScore">0</span><span class="msp-score-percent">%</span>
+          </div>
+          <p class="msp-score-caption">Skor Keseluruhan</p>
+        </div>
+
+        <div class="msp-category-scores" id="mspCategoryScores"></div>
+      </section>
+
+      <section class="msp-stat-tiles" id="mspStatTiles"></section>
+
+      <section id="mspDetailSections" class="msp-detail-sections"></section>
     </section>
 
-    <section class="msp-stat-tiles" id="mspStatTiles"></section>
+    <section id="mspCrawlSection" hidden>
+      <h2 class="msp-section-title">Crawl Situs &amp; Broken Link Checker</h2>
+      <dl class="msp-report-meta msp-section-meta">
+        <div><dt>Situs</dt><dd id="mspCrawlOrigin">-</dd></div>
+        <div><dt>Tanggal</dt><dd id="mspCrawlDate">-</dd></div>
+      </dl>
 
-    <section id="mspDetailSections" class="msp-detail-sections"></section>
+      <section class="msp-stat-tiles" id="mspCrawlStatTiles"></section>
+
+      <section class="msp-crawl-block">
+        <h3>Halaman yang Di-crawl</h3>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspCrawlPagesTable">
+            <thead>
+              <tr>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Skor</th>
+                <th>Title (panjang)</th>
+                <th>Meta Desc. (panjang)</th>
+                <th>Gambar (ada alt)</th>
+                <th>Catatan</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h3>Broken Link <span class="msp-count-badge" id="mspCrawlBrokenCount">0</span></h3>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspCrawlBrokenTable">
+            <thead><tr><th>URL Tautan</th><th>Status</th><th>Ditemukan di</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="mspCrawlBrokenEmpty" class="msp-empty-note" hidden>Tidak ada broken link yang ditemukan. 🎉</p>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h3>Redirect <span class="msp-count-badge" id="mspCrawlRedirectCount">0</span></h3>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspCrawlRedirectTable">
+            <thead><tr><th>Dari</th><th>Ke</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="mspCrawlRedirectEmpty" class="msp-empty-note" hidden>Tidak ada redirect yang ditemukan.</p>
+      </section>
+    </section>
+
+    <section id="mspSpeedSection" hidden>
+      <h2 class="msp-section-title">Cek Kecepatan (Google Lighthouse)</h2>
+      <dl class="msp-report-meta msp-section-meta">
+        <div><dt>URL</dt><dd id="mspSpeedUrl">-</dd></div>
+        <div><dt>Strategi</dt><dd id="mspSpeedStrategy">-</dd></div>
+        <div><dt>Tanggal</dt><dd id="mspSpeedDate">-</dd></div>
+      </dl>
+
+      <section class="msp-speed-category-scores" id="mspSpeedCategoryScores"></section>
+
+      <section class="msp-crawl-block">
+        <h3>Core Web Vitals &mdash; Data Lab (Lighthouse)</h3>
+        <div class="msp-metrics-grid" id="mspSpeedLabMetrics"></div>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h3>Core Web Vitals &mdash; Data Lapangan (Pengguna Nyata)</h3>
+        <div id="mspSpeedFieldMetricsWrap"></div>
+      </section>
+
+      <section class="msp-crawl-block">
+        <h3>Peluang Perbaikan Terbesar</h3>
+        <div id="mspSpeedOpportunities"></div>
+      </section>
+    </section>
 
     <footer class="msp-report-footer">
       Laporan ini dibuat otomatis oleh ekstensi <strong>MSP Page Audit</strong>,
       layanan digital dari Divisi Electronic Business
       <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer"><strong>PT Mitra Solusindo Pratama</strong></a>,
-      berdasarkan pemeriksaan on-page dan header jaringan pada satu halaman.
-      Hasil bersifat estimasi teknis, bukan jaminan peringkat mesin pencari.
+      menggabungkan hasil audit on-page, crawl situs, dan/atau cek kecepatan
+      yang tersimpan di perangkat ini. Hasil bersifat estimasi teknis, bukan
+      jaminan peringkat mesin pencari.
     </footer>
   </main>
 
+  <script src="report-model.js"></script>
+  <script src="speed-model.js"></script>
   <script src="report.js"></script>
 </body>
 </html>

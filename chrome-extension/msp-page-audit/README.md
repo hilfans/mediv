@@ -33,6 +33,16 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   pilih tujuan **Simpan sebagai PDF**, tanpa perlu library PDF tambahan.
   Ada juga legenda badge (✓/!/✕/i) dan info batas karakter title/meta
   description di bagian atas laporan.
+- **Satu PDF gabungan untuk semua fitur**: `report.html` selalu merender
+  ketiga bagian yang datanya tersimpan di perangkat — Audit SEO On-Page,
+  Crawl Situs (`mspLastCrawl`), dan Cek Kecepatan (`mspLastSpeedCheck`) —
+  sebagai satu laporan berurutan, bukan tiga PDF terpisah. Klik "Unduh
+  sebagai PDF" di halaman **Crawl Situs** atau **Cek Kecepatan** membuka
+  `report.html?autoprint=1` di tab baru, yang otomatis memicu dialog cetak
+  begitu semua bagian selesai dirender — jadi hasilnya tetap satu PDF
+  gabungan meski dipicu dari halaman fitur mana pun. Bagian yang datanya
+  belum ada (mis. belum pernah crawl) otomatis disembunyikan, bukan
+  ditampilkan kosong.
 
 Semua pengecekan di atas berjalan hanya untuk **tab yang sedang aktif**,
 dipicu saat ikon ekstensi diklik.
@@ -66,8 +76,9 @@ laporan lengkap (`crawl.html`):
 - 4 tingkatan yang bisa dipilih pengguna: Light (50 halaman), Medium (200),
   Heavy (500), Ultra (1000) — dengan modal konfirmasi wajib disetujui
   sebelum crawl jalan, karena aktivitas ini membebani server situs target.
-- Hasil crawl bisa diekspor ke PDF juga (`window.print()`, sama seperti
-  laporan satu halaman).
+- Hasil crawl bisa diekspor ke PDF juga — tombolnya membuka laporan
+  gabungan (`report.html`, lihat bagian "Satu PDF gabungan" di atas)
+  alih-alih mencetak `crawl.html` sendirian.
 
 **Izin tambahan**: fitur ini butuh akses ke domain di luar tab aktif, jadi
 `http://*/*` dan `https://*/*` didaftarkan sebagai **optional host
@@ -94,7 +105,8 @@ asli — persis seperti yang tampil di
 - Daftar peluang perbaikan performa terbesar (opportunities), diurutkan
   dari potensi penghematan waktu paling besar.
 - Bisa pilih strategi Mobile atau Desktop.
-- Diekspor ke PDF dengan cara yang sama (`window.print()`).
+- Diekspor ke PDF lewat laporan gabungan yang sama dengan Audit On-Page
+  dan Crawl Situs (lihat bagian "Satu PDF gabungan" di atas).
 
 Sesuai namanya, fitur ini ditujukan untuk **landing page/homepage**
 (satu URL), bukan crawl banyak halaman — memanggil PSI API untuk ratusan
@@ -152,8 +164,10 @@ lisensi di sisi server, di luar cakupan versi ini.
 ## Arsitektur kode
 
 - `report-model.js` — logika inti audit satu halaman (ekstraksi DOM lewat
-  `chrome.scripting`, pengecekan header/robots.txt, evaluasi & skoring).
-  Dipakai bersama oleh `popup.js` dan `report.js`.
+  `chrome.scripting`, pengecekan header/robots.txt, evaluasi & skoring),
+  plus `mspAggregateCrawl()` untuk menghitung skor/broken-link/halaman
+  bermasalah dari hasil crawl. Dipakai bersama oleh `popup.js`, `crawl.js`,
+  dan `report.js` supaya angka yang ditampilkan konsisten di semua tempat.
 - `crawl-engine.js` — mesin crawl BFS + pengecek broken link, berjalan di
   konteks `crawl.html` sendiri (bukan disuntik ke tab manapun), memakai
   `fetch` langsung karena sudah punya optional host permission. Memakai

@@ -316,7 +316,7 @@ async function init() {
     await showSetupFormIfAllowed();
   });
   document.getElementById("mspDownloadPdf").addEventListener("click", function () {
-    window.print();
+    window.open("report.html?autoprint=1", "_blank");
   });
 }
 

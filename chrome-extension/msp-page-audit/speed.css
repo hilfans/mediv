@@ -82,6 +82,13 @@ body {
 
 .msp-download-btn:hover { background: #ffb72b; }
 
+.msp-toolbar-hint {
+  max-width: 960px;
+  margin: 6px auto 0;
+  font-size: 11.5px;
+  color: #c7d2fe;
+}
+
 .msp-speed-page {
   max-width: 900px;
   margin: 0 auto;
