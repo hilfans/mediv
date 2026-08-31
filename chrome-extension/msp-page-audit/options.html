@@ -32,6 +32,16 @@
       kuota harian supaya aman dari penyalahgunaan bila key ini bocor.
     </div>
 
+    <div class="msp-warning">
+      <strong>Setelah ekstensi ini di-publish ke Chrome Web Store:</strong>
+      tambahkan juga <strong>Application restriction &rarr; HTTP referrers</strong>
+      di Google Cloud Console dengan pola
+      <code>chrome-extension://ID_EKSTENSI_ANDA/*</code>. Ini membuat key
+      hanya bisa dipakai dari ekstensi ini sendiri, sekalipun bocor.
+      Langkah lengkapnya ada di <code>PUBLISHING.md</code> pada folder
+      sumber ekstensi ini.
+    </div>
+
     <label class="msp-field">
       API Key
       <input type="password" id="mspApiKey" placeholder="AIza...">

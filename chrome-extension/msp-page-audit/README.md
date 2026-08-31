@@ -115,6 +115,12 @@ Disarankan membatasi API key di Google Cloud Console: aktifkan hanya
 **PageSpeed Insights API**, dan tambahkan batasan kuota harian supaya
 dampaknya terbatas kalau key sampai bocor.
 
+**Sebelum publish ke Chrome Web Store**, tambahkan juga proteksi
+**Application restriction &rarr; HTTP referrers** (`chrome-extension://<ID
+ekstensi>/*`) supaya key hanya bisa dipakai dari ekstensi ini sendiri —
+langkah lengkapnya (termasuk cara dapat ID ekstensi yang stabil) ada di
+[`PUBLISHING.md`](./PUBLISHING.md).
+
 ## Izin yang dipakai
 
 - `activeTab`, `scripting`, `storage` — wajib, terpasang sejak instalasi,
