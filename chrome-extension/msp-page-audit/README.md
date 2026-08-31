@@ -35,12 +35,19 @@ laporan lengkap (`crawl.html`):
 - Menjelajahi situs target mulai dari `sitemap.xml` (ikut satu tingkat ke
   dalam bila berupa sitemap index), dengan fallback ke penelusuran tautan
   internal apabila sitemap tidak ada.
-- Menghormati `robots.txt` (`Disallow` untuk `User-agent: *`) — path yang
-  di-*disallow* tidak ikut di-crawl. **Penyederhanaan yang disengaja**:
-  pencocokan aturan pakai *prefix match* biasa, tanpa wildcard `*`/`$`
-  seperti spesifikasi robots.txt lengkap.
+- **Halaman yang dilarang `robots.txt` atau ber-`noindex` TETAP di-crawl**
+  (tidak di-skip), lalu diberi catatan "Diblokir robots.txt" / "noindex" di
+  tabel hasil — supaya webmaster langsung ketahuan kalau ada halaman
+  penting yang ternyata salah konfigurasi (ke-block/ke-noindex tanpa
+  sengaja). Yang dibatasi hanya: halaman semacam ini tidak dipakai sebagai
+  sumber penemuan tautan baru, supaya crawl tidak melebar ke area yang
+  memang sengaja diblokir (mis. `/admin`). **Penyederhanaan yang
+  disengaja**: pencocokan aturan `Disallow` pakai *prefix match* biasa,
+  tanpa wildcard `*`/`$` seperti spesifikasi robots.txt lengkap.
 - Mengaudit tiap halaman HTML yang ditemukan (memakai logika evaluasi yang
-  sama dengan audit satu halaman) dan mendeteksi **redirect** (301/302, dsb).
+  sama dengan audit satu halaman — termasuk title, meta description, dan
+  gambar tanpa `alt`, ditampilkan sebagai kolom tersendiri di tabel hasil)
+  dan mendeteksi **redirect** (301/302, dsb).
 - Memeriksa status semua tautan yang ditemukan (internal & eksternal) untuk
   mencari **broken link** (4xx/5xx atau gagal terhubung).
 - 4 tingkatan yang bisa dipilih pengguna: Light (50 halaman), Medium (200),
@@ -85,6 +92,20 @@ dibatalkan tapi audit satu halaman di popup tetap berfungsi normal.
 Untuk publish ke Chrome Web Store nanti, folder ini tinggal di-zip dan
 diunggah lewat Chrome Web Store Developer Dashboard (perlu akun developer
 terdaftar, ada biaya pendaftaran satu kali dari Google).
+
+## Catatan implementasi penting
+
+Semua file CSS (`popup.css`, `report.css`, `crawl.css`) punya aturan global
+`[hidden] { display: none !important; }`. Tanpa ini, elemen yang diberi
+`display: flex`/`grid` untuk kebutuhan layout (mis. modal konfirmasi,
+`.msp-results`) akan **mengalahkan** gaya bawaan browser untuk atribut
+`hidden` (aturan penulis/author selalu menang atas aturan user-agent,
+terlepas dari spesifisitas) — sehingga `elemen.hidden = true` di JavaScript
+terlihat seperti tidak berpengaruh. Ini gotcha CSS yang nyata pernah
+terjadi di modal konfirmasi crawl (modal tidak pernah hilang setelah
+disetujui). Kalau menambah elemen baru yang di-toggle lewat `.hidden`,
+tidak perlu penanganan khusus lagi karena aturan global ini sudah menutupi
+semua kasus.
 
 ## Batasan yang disengaja
 

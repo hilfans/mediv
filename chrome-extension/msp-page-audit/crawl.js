@@ -79,7 +79,8 @@ function aggregateCrawl(crawlResult) {
   });
   var score = mspScoreFromCounts(overall);
   var brokenLinks = crawlResult.linkChecks.filter(function (l) { return !l.ok; });
-  return { overall: overall, score: score, brokenLinks: brokenLinks };
+  var blockedPages = crawlResult.pages.filter(function (p) { return p.robotsDisallowed || p.hasNoindex; });
+  return { overall: overall, score: score, brokenLinks: brokenLinks, blockedPages: blockedPages };
 }
 
 function renderResults(crawlResult, generatedAt) {
@@ -98,6 +99,7 @@ function renderResults(crawlResult, generatedAt) {
     { label: "Skor Situs", value: agg.score + "%", cls: agg.score >= 90 ? "pass" : (agg.score >= 50 ? "warn" : "fail") },
     { label: "Broken Link", value: agg.brokenLinks.length, cls: agg.brokenLinks.length > 0 ? "fail" : "pass" },
     { label: "Redirect", value: crawlResult.redirects.length, cls: crawlResult.redirects.length > 0 ? "warn" : "pass" },
+    { label: "Diblokir robots.txt/noindex", value: agg.blockedPages.length, cls: agg.blockedPages.length > 0 ? "warn" : "pass" },
     { label: "Pemeriksaan Bermasalah", value: agg.overall.fail, cls: agg.overall.fail > 0 ? "fail" : "pass" }
   ];
   document.getElementById("mspCrawlStatTiles").innerHTML = tiles.map(function (t) {
@@ -113,11 +115,44 @@ function renderResults(crawlResult, generatedAt) {
     var score = p.evaluation ? p.evaluation.overall.score : null;
     var scoreCell = score === null ? "-" : score + "%";
     var statusCls = p.status >= 200 && p.status < 400 ? "ok" : "fail";
+    var d = p.dom;
+
+    var titleCell = "-";
+    if (d) {
+      var tLen = d.title.length;
+      var tCls = !d.title ? "fail" : (tLen < 30 || tLen > 60 ? "warn" : "ok");
+      titleCell = '<span class="msp-status-chip ' + tCls + '">' + tLen + "</span> " +
+        escapeHtml(d.title ? (d.title.length > 45 ? d.title.slice(0, 45) + "…" : d.title) : "(kosong)");
+    }
+
+    var descCell = "-";
+    if (d) {
+      var dLen = d.metaDescription.length;
+      var dCls = !d.metaDescription ? "fail" : (dLen < 70 || dLen > 160 ? "warn" : "ok");
+      descCell = '<span class="msp-status-chip ' + dCls + '">' + dLen + "</span>";
+    }
+
+    var imgCell = "-";
+    if (d) {
+      var imgCls = d.missingAltCount === 0 ? "ok" : "warn";
+      imgCell = '<span class="msp-status-chip ' + imgCls + '">' +
+        (d.totalImages - d.missingAltCount) + "/" + d.totalImages + "</span>";
+    }
+
+    var notes = [];
+    if (p.robotsDisallowed) { notes.push('<span class="msp-status-chip fail">Diblokir robots.txt</span>'); }
+    if (p.hasNoindex) { notes.push('<span class="msp-status-chip fail">noindex</span>'); }
+    var notesCell = notes.length ? notes.join(" ") : "-";
+
     return (
       "<tr>" +
         '<td class="msp-url-cell"><a href="' + escapeHtml(p.finalUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(p.finalUrl) + "</a></td>" +
         '<td><span class="msp-status-chip ' + statusCls + '">' + p.status + "</span></td>" +
         "<td>" + scoreCell + "</td>" +
+        "<td>" + titleCell + "</td>" +
+        "<td>" + descCell + "</td>" +
+        "<td>" + imgCell + "</td>" +
+        "<td>" + notesCell + "</td>" +
       "</tr>"
     );
   }).join("");
@@ -191,10 +226,40 @@ async function runCrawlFlow(targetUrl, presetKey) {
 
   var generatedAt = new Date().toISOString();
   await chrome.storage.local.set({
-    mspLastCrawl: { result: crawlResult, generatedAt: generatedAt }
+    mspLastCrawl: { result: toStorableCrawlResult(crawlResult), generatedAt: generatedAt }
   });
 
   renderResults(crawlResult, generatedAt);
+}
+
+/**
+ * `page.doc` adalah objek Document hasil DOMParser — tidak bisa disimpan
+ * lewat chrome.storage.local (bukan nilai yang bisa di-structured-clone).
+ * Field ini cuma dipakai sementara saat crawl berjalan (untuk menemukan
+ * tautan baru), jadi dibuang sebelum disimpan; semua data yang dipakai
+ * untuk merender laporan (dom, evaluation, dst.) sudah berupa objek biasa.
+ */
+function toStorableCrawlResult(crawlResult) {
+  return {
+    origin: crawlResult.origin,
+    siteRobots: crawlResult.siteRobots,
+    redirects: crawlResult.redirects,
+    linkChecks: crawlResult.linkChecks,
+    pages: crawlResult.pages.map(function (p) {
+      return {
+        url: p.url,
+        finalUrl: p.finalUrl,
+        redirected: p.redirected,
+        status: p.status,
+        contentType: p.contentType,
+        dom: p.dom,
+        evaluation: p.evaluation,
+        robotsDisallowed: p.robotsDisallowed,
+        hasNoindex: p.hasNoindex,
+        error: p.error || null
+      };
+    })
+  };
 }
 
 async function handleStartCrawl() {

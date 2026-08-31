@@ -279,7 +279,9 @@ async function mspFetchAndAnalyzePage(url, siteRobots, fetchImpl) {
     contentType: contentType,
     doc: null,
     dom: null,
-    evaluation: null
+    evaluation: null,
+    robotsDisallowed: false, // diisi pemanggil (mspRunCrawl) berdasarkan robots.txt
+    hasNoindex: false
   };
 
   if (status >= 200 && status < 300 && contentType.toLowerCase().indexOf("html") !== -1) {
@@ -304,6 +306,7 @@ async function mspFetchAndAnalyzePage(url, siteRobots, fetchImpl) {
     page.doc = doc;
     page.dom = dom;
     page.evaluation = mspEvaluate(dom, net);
+    page.hasNoindex = /noindex/i.test(dom.robotsContent || "");
   }
 
   return page;
@@ -347,14 +350,31 @@ async function mspRunCrawl(options, hooks) {
 
   if (hooks.onPhase) { hooks.onPhase("crawling"); }
 
+  function isUrlDisallowed(urlStr) {
+    try {
+      var u = new URL(urlStr);
+      return mspIsDisallowed(u.pathname, siteRobots.disallowRules);
+    } catch (e) { return false; }
+  }
+
+  // Catatan penting: halaman yang dilarang robots.txt TETAP di-crawl (tidak
+  // di-skip) supaya webmaster bisa segera tahu kalau ada halaman penting
+  // yang ternyata ke-block robots.txt/noindex secara tidak sengaja. Yang
+  // membedakan hanyalah page.robotsDisallowed dipakai untuk memberi catatan
+  // di laporan, dan halaman semacam ini tidak dipakai sebagai sumber
+  // penemuan tautan baru (supaya crawl tidak melebar ke area yang memang
+  // sengaja diblokir, misalnya /admin).
   var visited = {};
-  var queue = [];
+  var queue = []; // {url, disallowed}
   seedUrls.forEach(function (u) {
     var norm = mspNormalizeUrl(u);
     var parsed;
     try { parsed = new URL(norm); } catch (e) { return; }
     if (parsed.origin !== origin) { return; }
-    if (!visited[norm]) { visited[norm] = true; queue.push(norm); }
+    if (!visited[norm]) {
+      visited[norm] = true;
+      queue.push({ url: norm, disallowed: isUrlDisallowed(norm) });
+    }
   });
 
   var pages = [];         // semua percobaan fetch (termasuk redirect), dipakai untuk link-check & laporan redirect
@@ -379,11 +399,13 @@ async function mspRunCrawl(options, hooks) {
         await mspSleep(30);
         continue;
       }
-      var url = queue[cursor];
+      var entry = queue[cursor];
+      var url = entry.url;
       cursor += 1;
       active += 1;
       try {
         var page = await mspFetchAndAnalyzePage(url, siteRobots, fetchImpl);
+        page.robotsDisallowed = entry.disallowed;
         pages.push(page);
 
         if (page.redirected) {
@@ -400,7 +422,10 @@ async function mspRunCrawl(options, hooks) {
             hooks.onPageDone(page, auditedPages.length, Math.min(maxPages, queue.length || maxPages));
           }
 
-          if (page.doc && auditedPages.length < maxPages) {
+          // Halaman yang dilarang robots.txt tidak dipakai sumber penemuan
+          // tautan baru, supaya crawl tidak melebar ke area yang sengaja
+          // diblokir pemiliknya (lihat catatan di atas).
+          if (page.doc && auditedPages.length < maxPages && !entry.disallowed) {
             var links = mspExtractLinks(page.doc, page.finalUrl);
             links.forEach(function (link) {
               recordLink(link, page.finalUrl);
@@ -409,10 +434,9 @@ async function mspRunCrawl(options, hooks) {
               if (parsedLink.origin !== origin) { return; }
               var norm = mspNormalizeUrl(link);
               if (visited[norm]) { return; }
-              if (mspIsDisallowed(parsedLink.pathname, siteRobots.disallowRules)) { return; }
               if (queue.length >= maxPages * 3) { return; }
               visited[norm] = true;
-              queue.push(norm);
+              queue.push({ url: norm, disallowed: isUrlDisallowed(norm) });
             });
           }
         }

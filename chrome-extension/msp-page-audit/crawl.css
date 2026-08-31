@@ -17,6 +17,15 @@
 
 * { box-sizing: border-box; }
 
+/* Beberapa elemen di bawah (modal, .msp-results, dll.) sengaja diberi
+   `display: flex/grid` untuk tata letaknya. Tanpa aturan ini, deklarasi
+   `display` tersebut MENGALAHKAN gaya bawaan browser untuk atribut
+   `hidden` (aturan penulis selalu menang atas aturan user-agent,
+   terlepas dari spesifisitas) — akibatnya elemen yang di-hidden lewat
+   JavaScript (`el.hidden = true`) tetap tampil. Aturan global ini
+   memaksa `hidden` selalu menang. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--msp-canvas);
@@ -294,7 +303,7 @@ body {
 
 .msp-stat-tiles {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 12px;
 }
 

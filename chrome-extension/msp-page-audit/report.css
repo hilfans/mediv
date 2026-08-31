@@ -21,6 +21,13 @@
   box-sizing: border-box;
 }
 
+/* Lihat catatan yang sama di crawl.css/popup.css: tanpa aturan ini,
+   elemen dengan display:flex/grid unconditional (mis. .msp-print-page)
+   akan tetap tampil walau el.hidden = true di JS. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--msp-canvas);

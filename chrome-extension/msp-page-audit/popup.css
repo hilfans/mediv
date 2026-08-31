@@ -21,6 +21,15 @@
   box-sizing: border-box;
 }
 
+/* Beberapa elemen (mis. .msp-loading) diberi display:flex untuk layout.
+   Tanpa aturan ini, deklarasi display tersebut mengalahkan gaya bawaan
+   browser untuk atribut hidden (aturan penulis selalu menang atas
+   user-agent) sehingga el.hidden = true di JS tidak benar-benar
+   menyembunyikan elemen. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   width: 380px;
