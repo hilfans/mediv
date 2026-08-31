@@ -81,13 +81,51 @@ function renderStatTiles(counts) {
   }).join("");
 }
 
+function renderHeadingOutline(items) {
+  var rows = items.map(function (h) {
+    var indent = (h.level - 1) * 16;
+    return (
+      '<li style="margin-left:' + indent + 'px">' +
+        '<span class="msp-heading-level">H' + h.level + "</span> " +
+        escapeHtml(h.text || "(tanpa teks)") +
+      "</li>"
+    );
+  }).join("");
+  return '<ul class="msp-heading-outline">' + rows + "</ul>";
+}
+
+function renderLinkBreakdown(extra) {
+  function list(urls) {
+    if (!urls.length) { return '<p class="msp-link-empty">Tidak ada.</p>'; }
+    return "<ul>" + urls.map(function (u) {
+      return '<li><a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(u) + "</a></li>";
+    }).join("") + "</ul>";
+  }
+  return (
+    '<details class="msp-link-breakdown">' +
+      "<summary>Lihat rincian " + (extra.internal.length + extra.external.length) + " tautan</summary>" +
+      '<div class="msp-link-columns">' +
+        '<div><h4>Internal (' + extra.internal.length + ")</h4>" + list(extra.internal) + "</div>" +
+        '<div><h4>Eksternal (' + extra.external.length + ")</h4>" + list(extra.external) + "</div>" +
+      "</div>" +
+    "</details>"
+  );
+}
+
 function renderRow(r) {
+  var extraHtml = "";
+  if (r.extra && r.extra.type === "heading-outline") {
+    extraHtml = renderHeadingOutline(r.extra.items);
+  } else if (r.extra && r.extra.type === "link-breakdown") {
+    extraHtml = renderLinkBreakdown(r.extra);
+  }
   return (
     '<div class="msp-row">' +
       '<div class="msp-badge ' + r.status + '">' + badgeSymbol(r.status) + "</div>" +
       "<div>" +
         '<div class="msp-row-label">' + escapeHtml(r.label) + "</div>" +
         (r.detail ? '<div class="msp-row-detail">' + escapeHtml(r.detail) + "</div>" : "") +
+        extraHtml +
       "</div>" +
     "</div>"
   );

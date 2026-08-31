@@ -6,10 +6,18 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
 
 ## Cakupan v1
 
-- **SEO on-page**: title, meta description, H1 & urutan heading, canonical,
-  meta robots, meta viewport, jumlah kata, jumlah tautan internal/eksternal.
-- **Sosial & data terstruktur**: Open Graph, Twitter Card, deteksi ringan
-  JSON-LD (jumlah blok + tipe schema.org yang ditemukan).
+- **SEO on-page**: title (ideal 30&ndash;60 karakter), meta description
+  (ideal 70&ndash;160 karakter), H1 & **hierarki heading lengkap**
+  (ditampilkan berjenjang H1/H2/H3/dst., bukan cuma jumlahnya), canonical,
+  meta robots, meta viewport, jumlah kata, dan **rincian tautan** internal
+  maupun eksternal (daftar URL-nya, bisa dibuka lewat "Lihat rincian
+  tautan" di laporan lengkap — bukan cuma angka jumlahnya).
+- **Sosial, Data Terstruktur & AI Bot**: Open Graph (dipakai Facebook,
+  LinkedIn, dan otomatis jadi fallback X/Twitter kalau `twitter:card` tidak
+  dipasang — makanya Twitter Card tidak dicek terpisah), serta **JSON-LD
+  (Schema Markup)** yang diperkuat: mengecek apakah tipe skema yang
+  ditemukan termasuk tipe penting untuk bot AI (ChatGPT/Perplexity) dan
+  Google seperti `Organization`, `WebSite`, `Article`, atau `Product`.
 - **Gambar**: total gambar & yang tanpa atribut `alt`.
 - **Keamanan**: HTTPS, HSTS, X-Content-Type-Options, proteksi clickjacking
   (X-Frame-Options / CSP frame-ancestors), Content-Security-Policy.
@@ -23,6 +31,8 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   untuk" (nama klien) untuk laporan yang mau dikirim ke prospek. Tombol
   "Unduh sebagai PDF" memicu dialog cetak browser (`window.print()`) —
   pilih tujuan **Simpan sebagai PDF**, tanpa perlu library PDF tambahan.
+  Ada juga legenda badge (✓/!/✕/i) dan info batas karakter title/meta
+  description di bagian atas laporan.
 
 Semua pengecekan di atas berjalan hanya untuk **tab yang sedang aktif**,
 dipicu saat ikon ekstensi diklik.
@@ -49,7 +59,10 @@ laporan lengkap (`crawl.html`):
   gambar tanpa `alt`, ditampilkan sebagai kolom tersendiri di tabel hasil)
   dan mendeteksi **redirect** (301/302, dsb).
 - Memeriksa status semua tautan yang ditemukan (internal & eksternal) untuk
-  mencari **broken link** (4xx/5xx atau gagal terhubung).
+  mencari **broken link** (4xx/5xx atau gagal terhubung). Progres fase ini
+  ditampilkan real-time ("Memeriksa tautan (X dari Y)…") supaya tidak
+  terlihat seperti macet saat fase crawl-nya sendiri sudah selesai tapi
+  pengecekan tautan (yang bisa berjumlah ratusan) masih berjalan.
 - 4 tingkatan yang bisa dipilih pengguna: Light (50 halaman), Medium (200),
   Heavy (500), Ultra (1000) — dengan modal konfirmasi wajib disetujui
   sebelum crawl jalan, karena aktivitas ini membebani server situs target.

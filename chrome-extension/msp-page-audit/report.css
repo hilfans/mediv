@@ -218,6 +218,141 @@ body {
   word-break: break-word;
 }
 
+/* ---------- Info bar (batas karakter & legenda badge) ---------- */
+
+.msp-info-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  align-items: center;
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  font-size: 12.5px;
+  color: var(--msp-muted);
+}
+
+.msp-info-item strong {
+  color: var(--msp-text);
+}
+
+.msp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-left: auto;
+}
+
+.msp-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.msp-legend-badge {
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+}
+
+/* ---------- Hierarki heading & rincian tautan ---------- */
+
+.msp-heading-outline {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 12.5px;
+}
+
+.msp-heading-outline li {
+  padding: 3px 0;
+  color: var(--msp-text);
+}
+
+.msp-heading-level {
+  display: inline-block;
+  min-width: 26px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--msp-canvas);
+  border: 1px solid var(--msp-border);
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--msp-navy);
+  text-align: center;
+}
+
+.msp-link-breakdown {
+  margin-top: 8px;
+}
+
+.msp-link-breakdown summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--msp-navy);
+}
+
+.msp-link-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.msp-link-columns h4 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--msp-muted);
+}
+
+.msp-link-columns ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--msp-border);
+  border-radius: 8px;
+}
+
+.msp-link-columns li {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--msp-border);
+  font-size: 11.5px;
+}
+
+.msp-link-columns li:last-child {
+  border-bottom: 0;
+}
+
+.msp-link-columns a {
+  color: var(--msp-navy);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.msp-link-columns a:hover {
+  text-decoration: underline;
+}
+
+.msp-link-empty {
+  margin: 0;
+  padding: 8px;
+  font-size: 11.5px;
+  color: var(--msp-muted);
+}
+
+@media (max-width: 600px) {
+  .msp-link-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Skor keseluruhan ---------- */
 
 .msp-score-overview {
@@ -488,6 +623,21 @@ body {
   .msp-stat-tile {
     box-shadow: none;
     break-inside: avoid;
+  }
+
+  /* <details> yang belum dibuka pengguna tetap harus tampil penuh di PDF,
+     supaya rincian tautan tidak hilang begitu saja saat diekspor. */
+  .msp-link-breakdown summary {
+    display: none;
+  }
+
+  .msp-link-breakdown .msp-link-columns {
+    display: grid !important;
+  }
+
+  .msp-link-columns ul {
+    max-height: none;
+    overflow: visible;
   }
 
   /* Chrome membuang warna latar/aksen secara default saat print;

@@ -221,8 +221,23 @@ async function runCrawlFlow(targetUrl, presetKey) {
         cls: cls,
         text: "[" + page.status + "] " + page.finalUrl
       });
+    },
+    onLinkChecked: function (entry, done, total) {
+      var cls = entry.ok ? "status-ok" : "status-fail";
+      document.getElementById("mspProgressPhase").textContent = "Memeriksa tautan (" + done + " dari " + total + ")…";
+      var pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+      document.getElementById("mspProgressFill").style.width = pct + "%";
+      document.getElementById("mspProgressCount").textContent = done + " dari " + total + " tautan diperiksa";
+      var log = document.getElementById("mspProgressLog");
+      var li = document.createElement("li");
+      li.className = cls;
+      li.textContent = "[" + (entry.status || "gagal") + "] " + entry.url;
+      log.insertBefore(li, log.firstChild);
+      while (log.children.length > 60) { log.removeChild(log.lastChild); }
     }
   });
+
+  document.getElementById("mspProgressPhase").textContent = "Menyiapkan laporan, mohon tunggu…";
 
   var generatedAt = new Date().toISOString();
   await chrome.storage.local.set({

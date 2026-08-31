@@ -48,13 +48,16 @@ function mspExtractDomSignals() {
     }
   });
 
+  // Twitter/X Card tidak dicek terpisah: kalau tidak dipasang, sistem X
+  // otomatis fallback membaca tag Open Graph standar (og:image, og:title,
+  // dst.) yang sudah dicek di bawah — jadi tidak ada risiko nyata yang
+  // perlu diperingatkan untuk kasus ini.
   var og = {
     title: metaByProperty("og:title"),
     description: metaByProperty("og:description"),
     image: metaByProperty("og:image"),
     type: metaByProperty("og:type")
   };
-  var twitterCard = metaByName("twitter:card");
 
   var jsonLdNodes = document.querySelectorAll('script[type="application/ld+json"]');
   var jsonLdTypes = [];
@@ -95,8 +98,9 @@ function mspExtractDomSignals() {
   var wordCount = trimmed.length ? trimmed.split(/\s+/).length : 0;
 
   var anchors = document.querySelectorAll("a[href]");
-  var internalLinks = 0;
-  var externalLinks = 0;
+  var internalLinksList = [];
+  var externalLinksList = [];
+  var seenLinks = {};
   var origin = location.origin;
   anchors.forEach(function (a) {
     var href = a.getAttribute("href") || "";
@@ -107,7 +111,10 @@ function mspExtractDomSignals() {
     }
     try {
       var url = new URL(href, location.href);
-      if (url.origin === origin) { internalLinks += 1; } else { externalLinks += 1; }
+      var abs = url.href;
+      if (seenLinks[abs]) { return; }
+      seenLinks[abs] = true;
+      if (url.origin === origin) { internalLinksList.push(abs); } else { externalLinksList.push(abs); }
     } catch (e) { /* URL tidak valid, dilewati */ }
   });
 
@@ -127,13 +134,14 @@ function mspExtractDomSignals() {
     totalImages: images.length,
     missingAltCount: missingAltCount,
     og: og,
-    twitterCard: twitterCard,
     jsonLdCount: jsonLdNodes.length,
     jsonLdTypes: jsonLdTypes,
     jsonLdErrors: jsonLdErrors,
     wordCount: wordCount,
-    internalLinks: internalLinks,
-    externalLinks: externalLinks
+    internalLinks: internalLinksList.length,
+    externalLinks: externalLinksList.length,
+    internalLinksList: internalLinksList,
+    externalLinksList: externalLinksList
   };
 }
 
@@ -216,11 +224,22 @@ async function mspCheckSameOriginNetwork(pageUrl) {
    EVALUASI (murni, tanpa DOM/chrome.* — aman dipakai di popup
    maupun halaman laporan). Baris "detail" disimpan sebagai teks
    polos; pemanggil bertanggung jawab meng-escape saat merender HTML.
+
+   Parameter "extra" (opsional) membawa data terstruktur untuk baris yang
+   butuh tampilan lebih dari sekadar teks (mis. hierarki heading, daftar
+   tautan) — hanya dipakai oleh halaman laporan lengkap (report.js), popup
+   yang ringkas mengabaikannya.
    ============================================================ */
 
-function mspRow(status, label, detail) {
-  return { status: status, label: label, detail: detail || "" };
+function mspRow(status, label, detail, extra) {
+  var row = { status: status, label: label, detail: detail || "" };
+  if (extra) { row.extra = extra; }
+  return row;
 }
+
+// Tipe skema.org yang paling relevan untuk mesin pencari & AI crawler
+// (ChatGPT/Perplexity, dll.) — dipakai untuk memberi saran kalau belum ada.
+var MSP_KEY_SCHEMA_TYPES = ["Organization", "WebSite", "Article", "Product", "LocalBusiness", "BreadcrumbList", "FAQPage"];
 
 function mspScoreFromCounts(counts) {
   var total = counts.pass + counts.warn + counts.fail;
@@ -281,7 +300,8 @@ function mspEvaluate(dom, net) {
   if (dom.headingOutline.length > 0) {
     seoRows.push(mspRow(dom.skippedHeadingLevel ? "warn" : "pass",
       "Urutan heading (" + dom.headingOutline.length + " ditemukan)",
-      dom.skippedHeadingLevel ? "Ada level heading yang dilompati (mis. H2 langsung ke H4)." : "Urutan heading berjenjang dengan baik."));
+      dom.skippedHeadingLevel ? "Ada level heading yang dilompati (mis. H2 langsung ke H4)." : "Urutan heading berjenjang dengan baik.",
+      { type: "heading-outline", items: dom.headingOutline }));
   }
 
   seoRows.push(mspRow(dom.canonical ? "pass" : "warn", "Canonical tag",
@@ -306,27 +326,38 @@ function mspEvaluate(dom, net) {
     seoRows.push(mspRow("pass", "Jumlah kata (≈ " + dom.wordCount + ")", ""));
   }
 
-  seoRows.push(mspRow("info", "Tautan pada halaman", dom.internalLinks + " internal, " + dom.externalLinks + " eksternal"));
+  seoRows.push(mspRow("info", "Tautan pada halaman", dom.internalLinks + " internal, " + dom.externalLinks + " eksternal",
+    { type: "link-breakdown", internal: dom.internalLinksList || [], external: dom.externalLinksList || [] }));
 
   buildCategory("seo", "SEO On-Page", seoRows);
 
-  // --- Sosial & Data Terstruktur ---
+  // --- Sosial, Data Terstruktur & AI Bot ---
+  // Twitter/X Card sengaja tidak dicek: kalau tidak dipasang, X otomatis
+  // fallback membaca tag Open Graph standar di bawah ini, jadi tidak ada
+  // risiko nyata yang perlu diperingatkan.
   var socialRows = [];
   var ogFound = [dom.og.title, dom.og.description, dom.og.image].filter(Boolean).length;
   socialRows.push(mspRow(ogFound === 3 ? "pass" : "warn", "Open Graph (" + ogFound + "/3 tag utama)",
-    "og:title, og:description, og:image untuk tampilan saat dibagikan ke media sosial."));
-  socialRows.push(mspRow(dom.twitterCard ? "pass" : "warn", "Twitter Card",
-    dom.twitterCard ? dom.twitterCard : "Tidak ditemukan meta twitter:card."));
+    "og:title, og:description, og:image dipakai Facebook, LinkedIn, dan (lewat fallback) X saat tautan dibagikan."));
 
   if (dom.jsonLdErrors > 0) {
-    socialRows.push(mspRow("fail", "Data terstruktur (JSON-LD)", dom.jsonLdErrors + " blok JSON-LD gagal di-parse (format tidak valid)."));
+    socialRows.push(mspRow("fail", "JSON-LD (Schema Markup)", dom.jsonLdErrors + " blok JSON-LD gagal di-parse (format tidak valid)."));
   } else if (dom.jsonLdCount === 0) {
-    socialRows.push(mspRow("warn", "Data terstruktur (JSON-LD)", "Tidak ditemukan markup schema.org."));
+    socialRows.push(mspRow("warn", "JSON-LD (Schema Markup)",
+      "Tidak ditemukan. Ini format data terstruktur paling penting untuk bot AI (ChatGPT, Perplexity) dan Google agar bisa memahami arti konten secara eksplisit. Disarankan menambah tipe seperti Organization, WebSite, Article, atau Product."));
   } else {
-    var typesLabel = dom.jsonLdTypes.length ? dom.jsonLdTypes.slice(0, 6).join(", ") : "tipe tidak terbaca";
-    socialRows.push(mspRow("pass", "Data terstruktur (" + dom.jsonLdCount + " blok)", typesLabel));
+    var typesLabel = dom.jsonLdTypes.length ? dom.jsonLdTypes.join(", ") : "tipe tidak terbaca";
+    var hasKeyType = dom.jsonLdTypes.some(function (t) {
+      return MSP_KEY_SCHEMA_TYPES.indexOf(t) !== -1;
+    });
+    if (hasKeyType) {
+      socialRows.push(mspRow("pass", "JSON-LD (" + dom.jsonLdCount + " blok)", "Tipe ditemukan: " + typesLabel));
+    } else {
+      socialRows.push(mspRow("warn", "JSON-LD (" + dom.jsonLdCount + " blok)",
+        "Tipe ditemukan: " + typesLabel + ". Belum ada tipe umum seperti Organization/WebSite/Article/Product yang biasanya paling membantu bot AI & Google memahami halaman ini."));
+    }
   }
-  buildCategory("social", "Sosial & Data Terstruktur", socialRows);
+  buildCategory("social", "Sosial, Data Terstruktur & AI Bot", socialRows);
 
   // --- Gambar ---
   var imgRows = [];

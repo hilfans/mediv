@@ -457,7 +457,7 @@ async function mspRunCrawl(options, hooks) {
   var crawledByUrl = {};
   pages.forEach(function (p) { crawledByUrl[mspNormalizeUrl(p.finalUrl)] = p; });
 
-  var brokenLinkResults = await mspCheckBrokenLinks(linkSources, crawledByUrl, fetchImpl, concurrency);
+  var brokenLinkResults = await mspCheckBrokenLinks(linkSources, crawledByUrl, fetchImpl, concurrency, hooks.onLinkChecked);
 
   if (hooks.onPhase) { hooks.onPhase("done"); }
 
@@ -470,10 +470,11 @@ async function mspRunCrawl(options, hooks) {
   };
 }
 
-async function mspCheckBrokenLinks(linkSources, crawledByUrl, fetchImpl, concurrency) {
+async function mspCheckBrokenLinks(linkSources, crawledByUrl, fetchImpl, concurrency, onLinkChecked) {
   var urls = Object.keys(linkSources);
   var results = [];
   var cursor = 0;
+  var done = 0;
 
   async function worker() {
     while (cursor < urls.length) {
@@ -481,28 +482,32 @@ async function mspCheckBrokenLinks(linkSources, crawledByUrl, fetchImpl, concurr
       cursor += 1;
       var foundOnPages = Object.keys(linkSources[url]);
       var norm = mspNormalizeUrl(url);
+      var entry;
 
       if (crawledByUrl[norm]) {
         var p = crawledByUrl[norm];
-        results.push({
+        entry = {
           url: url,
           status: p.status,
           ok: p.status >= 200 && p.status < 400,
           fromCrawl: true,
           foundOnPages: foundOnPages
-        });
-        continue;
+        };
+      } else {
+        try {
+          var resp = await fetchImpl(url, { method: "HEAD", redirect: "follow", cache: "no-store" });
+          if (resp.status === 405 || resp.status === 501) {
+            resp = await fetchImpl(url, { method: "GET", redirect: "follow", cache: "no-store" });
+          }
+          entry = { url: url, status: resp.status, ok: resp.ok, fromCrawl: false, foundOnPages: foundOnPages };
+        } catch (e) {
+          entry = { url: url, status: 0, ok: false, error: String((e && e.message) || e), fromCrawl: false, foundOnPages: foundOnPages };
+        }
       }
 
-      try {
-        var resp = await fetchImpl(url, { method: "HEAD", redirect: "follow", cache: "no-store" });
-        if (resp.status === 405 || resp.status === 501) {
-          resp = await fetchImpl(url, { method: "GET", redirect: "follow", cache: "no-store" });
-        }
-        results.push({ url: url, status: resp.status, ok: resp.ok, fromCrawl: false, foundOnPages: foundOnPages });
-      } catch (e) {
-        results.push({ url: url, status: 0, ok: false, error: String((e && e.message) || e), fromCrawl: false, foundOnPages: foundOnPages });
-      }
+      results.push(entry);
+      done += 1;
+      if (onLinkChecked) { onLinkChecked(entry, done, urls.length); }
     }
   }
 
