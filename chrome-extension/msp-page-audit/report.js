@@ -63,6 +63,37 @@ function renderCategoryScores(categories) {
   document.getElementById("mspCategoryScores").innerHTML = html;
 }
 
+/**
+ * Baris tambahan di daftar skor kategori (di bawah ring skor keseluruhan)
+ * untuk hasil Cek Kecepatan -- ditaruh di widget yang sama supaya admin
+ * langsung lihat skor Performance Lighthouse tanpa scroll ke bagian
+ * terpisah. Kalau belum pernah dijalankan, cukup tampilkan notifikasi
+ * "Belum dilakukan tes" alih-alih bar kosong yang membingungkan.
+ */
+function renderSpeedCategoryRow(speedData) {
+  var wrap = document.getElementById("mspCategoryScores");
+  var row = document.createElement("div");
+  var hasScore = speedData && speedData.parsed && speedData.parsed.categories &&
+    typeof speedData.parsed.categories.performance === "number";
+  if (hasScore) {
+    var score = speedData.parsed.categories.performance;
+    var band = scoreBand(score);
+    row.className = "msp-category-score-row";
+    row.innerHTML =
+      '<span class="msp-cat-name">Cek Kecepatan (Google Lighthouse)</span>' +
+      '<span class="msp-category-score-track">' +
+        '<span class="msp-category-score-fill band-' + band + '" style="width:' + score + '%"></span>' +
+      "</span>" +
+      '<span class="msp-cat-pct">' + score + "%</span>";
+  } else {
+    row.className = "msp-category-score-row untested";
+    row.innerHTML =
+      '<span class="msp-cat-name">Cek Kecepatan (Google Lighthouse)</span>' +
+      '<span class="msp-cat-pct msp-cat-untested">Belum dilakukan tes</span>';
+  }
+  wrap.appendChild(row);
+}
+
 function renderStatTiles(counts) {
   var total = counts.pass + counts.warn + counts.fail;
   var tiles = [
@@ -519,6 +550,7 @@ async function init() {
     document.getElementById("mspReportDate").textContent = formatDate(auditModel.generatedAt);
     renderScoreRing(auditModel.overall.score);
     renderCategoryScores(auditModel.categories);
+    renderSpeedCategoryRow(speedData);
     renderStatTiles(auditModel.overall.counts);
     renderDetailSections(auditModel.categories);
     try { hostname = new URL(auditModel.url).hostname; } catch (e) { /* biarkan default */ }

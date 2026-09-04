@@ -121,6 +121,11 @@ body {
   max-width: 62ch;
 }
 
+.msp-setup-desc a {
+  color: var(--msp-navy);
+  font-weight: 700;
+}
+
 .msp-field {
   display: flex;
   flex-direction: column;

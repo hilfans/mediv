@@ -625,6 +625,18 @@ body {
   color: var(--msp-text);
 }
 
+.msp-category-score-row.untested {
+  grid-template-columns: 150px 1fr;
+}
+
+.msp-category-score-row.untested .msp-cat-untested {
+  text-align: left;
+  font-weight: 600;
+  font-style: italic;
+  font-variant-numeric: normal;
+  color: var(--msp-muted);
+}
+
 /* ---------- Stat tiles ---------- */
 
 .msp-stat-tiles {
@@ -1034,5 +1046,9 @@ body {
 
   .msp-category-score-row {
     grid-template-columns: 110px 1fr 38px;
+  }
+
+  .msp-category-score-row.untested {
+    grid-template-columns: 110px 1fr;
   }
 }

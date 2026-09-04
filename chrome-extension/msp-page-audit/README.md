@@ -62,7 +62,12 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   "Unduh sebagai PDF" memicu dialog cetak browser (`window.print()`) —
   pilih tujuan **Simpan sebagai PDF**, tanpa perlu library PDF tambahan.
   Ada juga legenda badge (✓/!/✕/i) dan info batas karakter title/meta
-  description di bagian atas laporan.
+  description di bagian atas laporan. Daftar skor kategori di widget ring
+  chart juga menampilkan baris **"Cek Kecepatan (Google Lighthouse)"**
+  setelah baris Robots & Sitemap — berisi skor Performance kalau fitur
+  Cek Kecepatan sudah pernah dijalankan untuk URL ini, atau notifikasi
+  **"Belum dilakukan tes"** kalau belum, supaya admin langsung tahu tanpa
+  perlu membuka bagian Cek Kecepatan secara terpisah.
 - **Satu PDF gabungan untuk semua fitur**: `report.html` selalu merender
   ketiga bagian yang datanya tersimpan di perangkat — Audit SEO On-Page,
   Crawl Situs (`mspLastCrawl`), dan Cek Kecepatan (`mspLastSpeedCheck`) —
@@ -146,7 +151,10 @@ halaman sekaligus akan sangat lambat dan boros kuota API.
 
 Fitur ini butuh API key PageSpeed Insights pribadi, diatur lewat halaman
 **Options** ekstensi (klik kanan ikon ekstensi &rarr; Options, atau tombol
-"Atur API Key" di `speed.html`). **API key TIDAK PERNAH ditulis di kode
+"Atur API Key" di `speed.html`). Kartu "API Key Belum Diatur" di
+`speed.html` menyertakan tautan ke tata cara lengkap membuat API key:
+[Cara Dapat API Key PageSpeed Insights](https://www.msp.web.id/2020/02/cara-dapat-api-key-pagespeed-insights.html)
+di blog msp.web.id. **API key TIDAK PERNAH ditulis di kode
 sumber ekstensi ini** — kalau ditulis di kode, key itu akan ikut ter-commit
 ke repository dan terlihat oleh siapa pun yang membaca/meng-install
 ekstensinya. Key disimpan hanya di `chrome.storage.local` milik masing-masing
