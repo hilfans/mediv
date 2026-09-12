@@ -289,6 +289,7 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
   }
   var trimmed = bodyText.trim();
   var wordCount = trimmed.length ? trimmed.split(/\s+/).length : 0;
+  var bodyTextExcerpt = trimmed.slice(0, 1500);
 
   var allLinks = mspExtractLinks(doc, pageUrl);
   var internalLinks = 0;
@@ -326,6 +327,7 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
     jsonLdBlocks: jsonLdBlocks,
     googleBusinessLink: googleBusinessLink,
     wordCount: wordCount,
+    bodyTextExcerpt: bodyTextExcerpt,
     internalLinks: internalLinks,
     externalLinks: externalLinks
   };

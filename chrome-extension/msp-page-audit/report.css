@@ -976,6 +976,114 @@ body {
   font-weight: 700;
 }
 
+/* ---------- Kartu fitur AI (Gemini) ---------- */
+
+.msp-gemini-card {
+  background: var(--msp-card);
+  border: 1px solid var(--msp-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  break-inside: avoid;
+}
+
+.msp-gemini-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.msp-gemini-card-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--msp-navy);
+}
+
+.msp-gemini-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+}
+
+.msp-gemini-hint code {
+  background: var(--msp-canvas);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.msp-gemini-loading {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--msp-muted);
+  font-style: italic;
+}
+
+.msp-gemini-error {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--msp-fail-bg);
+  color: var(--msp-fail);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.msp-gemini-result {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.msp-gemini-block {
+  border: 1px solid var(--msp-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+
+.msp-gemini-block.warn {
+  background: var(--msp-warn-bg);
+  border-color: #fde68a;
+}
+
+.msp-gemini-score {
+  font-weight: 800;
+  color: var(--msp-navy);
+  margin-bottom: 4px;
+}
+
+.msp-gemini-block p {
+  margin: 0 0 6px;
+  color: var(--msp-text);
+  line-height: 1.6;
+}
+
+.msp-gemini-block ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--msp-muted);
+  line-height: 1.6;
+}
+
+.msp-gemini-summary-text {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--msp-text);
+}
+
+.msp-gemini-result ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--msp-text);
+}
+
 /* ---------- Print / Ekspor PDF ---------- */
 
 @media print {

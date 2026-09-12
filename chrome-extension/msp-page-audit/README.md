@@ -198,16 +198,84 @@ upgrade untuk pengguna umum, bukan jaminan pendapatan dari pengguna yang
 berniat menghindar — penegakan yang sungguh-sungguh butuh pelacakan +
 lisensi di sisi server, di luar cakupan versi ini.
 
+## Cakupan v4 — Fitur AI (Gemini, opsional)
+
+Dua fitur berbasis **Gemini API** milik Google, keduanya opsional (tidak
+mengisi API key Gemini = fitur ini tidak muncul/tidak aktif, seluruh
+fitur lain tetap berfungsi normal seperti biasa) dan dipicu manual lewat
+tombol — tidak pernah jalan otomatis di setiap audit:
+
+- **Analisis AI: Judul & Meta Description** (di laporan lengkap, bagian
+  Audit SEO On-Page) — menilai daya tarik & kejelasan title/meta
+  description (skor 1-5 + feedback), memberi hingga 3 saran alternatif
+  dalam bahasa konten halaman (bukan selalu Bahasa Indonesia), dan
+  mengecek apakah bahasa isi konten cocok dengan atribut `lang` HTML
+  yang dideklarasikan.
+- **Ringkasan Eksekutif (AI)** (di bagian atas laporan lengkap) —
+  merangkum seluruh temuan (skor & masalah utama dari Audit On-Page,
+  Crawl Situs, dan/atau Cek Kecepatan yang tersedia) jadi 3-5 kalimat
+  bahasa awam tanpa jargon teknis, plus maksimal 3 prioritas perbaikan
+  — ditujukan untuk laporan yang dikirim ke pemilik bisnis non-teknis.
+
+Berbeda dari fitur Cek Kecepatan (yang cuma mengirim URL), fitur AI ini
+mengirim **cuplikan teks halaman** (title, meta description, hingga
+±1.500 karakter isi konten) atau **ringkasan skor/temuan hasil audit**
+langsung dari browser pengguna ke Gemini API — dijelaskan eksplisit di
+kartu Options dan di [`PRIVACY.md`](./PRIVACY.md).
+
+Model yang dipakai: `gemini-2.5-flash`, dengan
+[controlled generation](https://ai.google.dev/gemini-api/docs/structured-output)
+(`responseSchema`) supaya keluaran selalu JSON valid sesuai skema yang
+diharapkan — bukan mengandalkan instruksi teks "balas dalam JSON" yang
+rawan terbungkus blok markdown dan gagal di-parse.
+
+### API Key Gemini (opsional, terpisah dari API key PSI)
+
+Diatur lewat halaman **Options**, kartu terpisah dari API key PageSpeed
+Insights. Buat gratis lewat
+[Google AI Studio &rarr; Get API Key](https://aistudio.google.com/apikey)
+(tersedia tingkat gratis/free tier dengan batas kuota dari Google). Sama
+seperti key PSI: **tidak pernah ditulis di kode sumber**, disimpan hanya
+di `chrome.storage.local` milik pengguna, dan dipakai langsung dari
+browser ke Gemini API — tidak lewat server PT MSP. Disarankan dibatasi
+di Google Cloud Console ke **Generative Language API** saja, dan
+**sebelum publish ke Chrome Web Store** ditambahkan juga
+**Application restriction &rarr; HTTP referrers** — langkah lengkapnya
+ada di [`PUBLISHING.md`](./PUBLISHING.md).
+
+### Ketahanan terhadap error
+
+`gemini-model.js` memvalidasi setiap respons secara strict (field wajib
+harus ada, sesuai skema) sebelum dipakai merender apa pun — respons yang
+terpotong, diblokir filter keamanan Google (`promptFeedback.blockReason`),
+kehabisan token (`finishReason` bukan `STOP`), atau tidak lengkap akan
+menampilkan pesan error yang jelas di kartu terkait, bukan gagal diam-diam
+atau merender data rusak. Error HTTP 429 (kuota habis) dan 400/403 (key
+ditolak) juga dibedakan pesannya supaya pengguna tahu harus berbuat apa.
+
+### Hasil audit lama (sebelum fitur ini ada)
+
+Field `rawSignals` (title/meta/lang/cuplikan teks mentah) baru mulai
+disimpan di `mspLastAudit` sejak fitur ini ditambahkan. Laporan dari
+hasil audit yang tersimpan SEBELUM update ini tidak punya field tersebut
+— tombol "Analisis dengan AI (Gemini)" untuk Judul & Meta akan otomatis
+nonaktif dengan pesan yang meminta audit ulang dari popup, bukan gagal
+tanpa penjelasan.
+
 ## Izin yang dipakai
 
 - `activeTab`, `scripting`, `storage` — wajib, terpasang sejak instalasi,
   tanpa dialog peringatan khusus.
 - `http://*/*`, `https://*/*` — **opsional**, baru diminta saat pengguna
   mengaktifkan fitur Crawl Situs.
-- `https://www.googleapis.com/*` — **opsional**, baru diminta saat
-  pengguna pertama kali menjalankan fitur Cek Kecepatan. Dipisah dari
-  permission crawl di atas supaya tiap fitur punya jejak izin sendiri
-  yang jelas alasannya.
+- `https://www.googleapis.com/*`, `https://generativelanguage.googleapis.com/*`
+  — **opsional**, didaftarkan untuk PSI API dan Gemini API. Dalam praktiknya
+  kedua endpoint Google ini mengirim header CORS yang mengizinkan origin
+  `chrome-extension://`, jadi `fetch()` ke keduanya berhasil walau
+  permission ini tidak pernah benar-benar diminta lewat
+  `chrome.permissions.request()` — tetap didaftarkan sebagai dokumentasi
+  transparan endpoint mana saja yang dihubungi ekstensi ini (dipakai juga
+  sebagai acuan isi `PRIVACY.md`), bukan karena secara teknis wajib.
 
 ## Arsitektur kode
 
@@ -225,8 +293,14 @@ lisensi di sisi server, di luar cakupan versi ini.
   dan mem-parsing responsnya (skor kategori, metrik lab/lapangan, daftar
   opportunity). Tidak menyentuh DOM/chrome.* sama sekali, supaya mudah
   diuji dan supaya jelas tidak ada API key yang tertanam di dalamnya.
+- `gemini-model.js` — fungsi murni untuk menyusun prompt & `responseSchema`
+  tiap fitur AI, memanggil endpoint Gemini, dan memvalidasi/mem-parsing
+  responsnya. Pola sama persis dengan `speed-model.js` (tidak menyentuh
+  DOM/chrome.*, tidak ada API key tertanam). Dipakai oleh `report.js`.
 - `options.html`/`options.js` — halaman Options standar Chrome untuk
-  menyimpan API key PSI di `chrome.storage.local`.
+  menyimpan API key PSI dan API key Gemini (dua field terpisah) di
+  `chrome.storage.local`, lewat satu fungsi `setupKeyField()` yang
+  dipakai ulang untuk kedua key supaya logikanya tidak ditulis dua kali.
 
 ## Cara memasang untuk pengujian (mode developer)
 
@@ -282,6 +356,18 @@ semua kasus.
   dst.) yang ditemukan lewat `<a href>` tetap di-GET penuh sebelum ketahuan
   bukan halaman (potensi boros bandwidth untuk aset besar) — cukup untuk
   situs skala UKM/menengah, belum dioptimalkan untuk crawl skala besar.
+- Fitur AI (Gemini) hasilnya **tidak di-cache/disimpan** antar kunjungan
+  laporan — tiap kali halaman `report.html` dibuka ulang, tombol "Analisis
+  dengan AI"/"Buat Ringkasan dengan AI" perlu diklik lagi (memanggil
+  Gemini API lagi, memakai kuota lagi). Ini penyederhanaan yang disengaja
+  untuk versi pertama, supaya tidak perlu logika invalidasi cache
+  (kapan hasil AI dianggap basi kalau kontennya berubah, dsb.) — bisa
+  ditambah di versi berikutnya kalau dibutuhkan.
+- Fitur AI baru mencakup 2 dari daftar yang lebih panjang yang pernah
+  didiskusikan (draft JSON-LD otomatis, draft alt text lewat Gemini
+  Vision, deteksi konten generik/E-E-A-T, dst.) — sengaja dimulai dari
+  yang paling murah & jelas manfaatnya dulu (lihat riwayat diskusi di
+  percakapan pengembangan), bukan langsung semua sekaligus.
 
 ## Soal asal-usul kode
 

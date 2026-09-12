@@ -51,6 +51,21 @@
       </dl>
     </header>
 
+    <section id="mspGeminiSummaryCard" class="msp-gemini-card">
+      <div class="msp-gemini-card-head">
+        <h3>Ringkasan Eksekutif (AI)</h3>
+        <button id="mspGeminiSummaryBtn" class="msp-secondary-btn msp-no-print" type="button">Buat Ringkasan dengan AI (Gemini)</button>
+      </div>
+      <p class="msp-gemini-hint">
+        Merangkum semua temuan di bawah jadi bahasa awam untuk pemilik
+        bisnis non-teknis. Fitur opsional — butuh API key Gemini gratis
+        (diatur lewat halaman Options ekstensi).
+      </p>
+      <p id="mspGeminiSummaryLoading" class="msp-gemini-loading" hidden>Membuat ringkasan&hellip;</p>
+      <p id="mspGeminiSummaryError" class="msp-gemini-error" hidden></p>
+      <div id="mspGeminiSummaryResult" class="msp-gemini-result" hidden></div>
+    </section>
+
     <section id="mspOnPageSection" hidden>
       <h2 class="msp-section-title">Audit SEO On-Page</h2>
       <dl class="msp-report-meta msp-section-meta">
@@ -71,6 +86,22 @@
           <span><span class="msp-badge fail msp-legend-badge">&#10005;</span> Bermasalah</span>
           <span><span class="msp-badge info msp-legend-badge">i</span> Informasi (bukan pass/fail)</span>
         </div>
+      </section>
+
+      <section id="mspGeminiTitleMetaCard" class="msp-gemini-card">
+        <div class="msp-gemini-card-head">
+          <h3>Analisis AI: Judul &amp; Meta Description</h3>
+          <button id="mspGeminiTitleMetaBtn" class="msp-secondary-btn msp-no-print" type="button">Analisis dengan AI (Gemini)</button>
+        </div>
+        <p class="msp-gemini-hint">
+          Menilai daya tarik & kejelasan title/meta description, memberi
+          saran alternatif, dan mengecek kecocokan bahasa konten dengan
+          atribut <code>lang</code> halaman. Fitur opsional — butuh API
+          key Gemini gratis.
+        </p>
+        <p id="mspGeminiTitleMetaLoading" class="msp-gemini-loading" hidden>Menganalisis&hellip;</p>
+        <p id="mspGeminiTitleMetaError" class="msp-gemini-error" hidden></p>
+        <div id="mspGeminiTitleMetaResult" class="msp-gemini-result" hidden></div>
       </section>
 
       <section class="msp-score-overview">
@@ -194,6 +225,7 @@
 
   <script src="report-model.js"></script>
   <script src="speed-model.js"></script>
+  <script src="gemini-model.js"></script>
   <script src="report.js"></script>
 </body>
 </html>

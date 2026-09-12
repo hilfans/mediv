@@ -200,6 +200,9 @@ function mspExtractDomSignals() {
   }
   var trimmed = bodyText.trim();
   var wordCount = trimmed.length ? trimmed.split(/\s+/).length : 0;
+  // Cuplikan pendek dipakai sebagai konteks untuk fitur berbasis AI (Gemini) --
+  // bukan untuk analisis kata di ekstensi ini sendiri.
+  var bodyTextExcerpt = trimmed.slice(0, 1500);
 
   var anchors = document.querySelectorAll("a[href]");
   var internalLinksList = [];
@@ -272,6 +275,7 @@ function mspExtractDomSignals() {
     jsonLdBlocks: jsonLdBlocks,
     googleBusinessLink: googleBusinessLink,
     wordCount: wordCount,
+    bodyTextExcerpt: bodyTextExcerpt,
     internalLinks: internalLinksList.length,
     externalLinks: externalLinksList.length,
     internalLinksList: internalLinksList,
@@ -728,7 +732,17 @@ function mspEvaluate(dom, net) {
       counts: overallCounts,
       score: mspScoreFromCounts(overallCounts)
     },
-    categories: categories
+    categories: categories,
+    // Cuplikan sinyal mentah (bukan hasil evaluasi) -- disimpan supaya fitur
+    // berbasis AI (Gemini) di report.js punya bahan konteks tanpa perlu
+    // mengakses ulang tab yang diaudit (yang mungkin sudah tertutup saat
+    // laporan dibuka).
+    rawSignals: {
+      title: dom.title,
+      metaDescription: dom.metaDescription,
+      lang: dom.lang,
+      bodyTextExcerpt: dom.bodyTextExcerpt || ""
+    }
   };
 }
 

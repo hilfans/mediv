@@ -1,5 +1,132 @@
 "use strict";
 
+var GEMINI_STORAGE_KEY = "mspGeminiApiKey";
+
+async function getGeminiApiKey() {
+  var data = await chrome.storage.local.get(GEMINI_STORAGE_KEY);
+  return data && data[GEMINI_STORAGE_KEY] ? data[GEMINI_STORAGE_KEY] : "";
+}
+
+/**
+ * Wrapper generik pemanggilan Gemini API -- dipakai semua fitur AI di
+ * halaman ini. Pesan error dibuat jelas untuk 3 skenario paling umum:
+ * key belum diisi, key ditolak Google, dan kuota habis.
+ */
+async function callGemini(promptText, responseSchema) {
+  var apiKey = await getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("API key Gemini belum diatur. Buka halaman Options ekstensi (klik kanan ikon ekstensi → Options) untuk mengisinya -- gratis lewat Google AI Studio.");
+  }
+  var url = mspBuildGeminiUrl(apiKey);
+  var resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(mspBuildGeminiRequestBody(promptText, responseSchema))
+  });
+  var data = await resp.json();
+  if (!resp.ok) {
+    var msg = (data && data.error && data.error.message) || ("HTTP " + resp.status);
+    if (resp.status === 429) {
+      throw new Error("Kuota Gemini API harian/menit habis. Coba lagi nanti. (" + msg + ")");
+    }
+    if (resp.status === 400 || resp.status === 403) {
+      throw new Error("API key Gemini ditolak Google: " + msg);
+    }
+    throw new Error("Gemini API error: " + msg);
+  }
+  return data;
+}
+
+function renderTitleMetaResult(parsed) {
+  var titleSuggestionsHtml = parsed.titleSuggestions.length
+    ? "<ul>" + parsed.titleSuggestions.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ul>"
+    : "";
+  var descSuggestionsHtml = parsed.descriptionSuggestions.length
+    ? "<ul>" + parsed.descriptionSuggestions.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ul>"
+    : "";
+  var lc = parsed.languageConsistency;
+  var langText = lc.matches
+    ? "Bahasa konten (\"" + escapeHtml(lc.detectedContentLang) + "\") sudah cocok dengan atribut lang halaman."
+    : "Bahasa konten terdeteksi sebagai \"" + escapeHtml(lc.detectedContentLang) + "\" -- kemungkinan tidak cocok dengan atribut lang yang dideklarasikan halaman. Periksa kembali.";
+
+  document.getElementById("mspGeminiTitleMetaResult").innerHTML =
+    '<div class="msp-gemini-block">' +
+      '<div class="msp-gemini-score">Skor Title: ' + parsed.titleQualityScore + '/5</div>' +
+      "<p>" + escapeHtml(parsed.titleFeedback) + "</p>" +
+      titleSuggestionsHtml +
+    "</div>" +
+    '<div class="msp-gemini-block">' +
+      '<div class="msp-gemini-score">Skor Meta Description: ' + parsed.descriptionQualityScore + '/5</div>' +
+      "<p>" + escapeHtml(parsed.descriptionFeedback) + "</p>" +
+      descSuggestionsHtml +
+    "</div>" +
+    '<div class="msp-gemini-block' + (lc.matches ? "" : " warn") + '">' +
+      '<div class="msp-gemini-score">Konsistensi Bahasa</div>' +
+      "<p>" + langText + "</p>" +
+    "</div>";
+}
+
+async function handleTitleMetaAnalysis(rawSignals) {
+  var btn = document.getElementById("mspGeminiTitleMetaBtn");
+  var loadingEl = document.getElementById("mspGeminiTitleMetaLoading");
+  var errorEl = document.getElementById("mspGeminiTitleMetaError");
+  var resultEl = document.getElementById("mspGeminiTitleMetaResult");
+
+  btn.disabled = true;
+  errorEl.hidden = true;
+  resultEl.hidden = true;
+  loadingEl.hidden = false;
+
+  try {
+    var prompt = mspBuildTitleMetaPrompt(rawSignals);
+    var raw = await callGemini(prompt, MSP_GEMINI_TITLE_META_SCHEMA);
+    var parsed = mspParseTitleMetaResponse(raw);
+    renderTitleMetaResult(parsed);
+    resultEl.hidden = false;
+  } catch (err) {
+    errorEl.textContent = (err && err.message) || "Gagal menganalisis dengan AI.";
+    errorEl.hidden = false;
+  } finally {
+    loadingEl.hidden = true;
+    btn.disabled = false;
+  }
+}
+
+function renderExecSummaryResult(parsed) {
+  var prioritiesHtml = parsed.topPriorities.length
+    ? "<ol>" + parsed.topPriorities.map(function (p) { return "<li>" + escapeHtml(p) + "</li>"; }).join("") + "</ol>"
+    : "";
+  document.getElementById("mspGeminiSummaryResult").innerHTML =
+    '<p class="msp-gemini-summary-text">' + escapeHtml(parsed.summary) + "</p>" + prioritiesHtml;
+}
+
+async function handleExecSummary(auditModel, crawlData, speedData) {
+  var btn = document.getElementById("mspGeminiSummaryBtn");
+  var loadingEl = document.getElementById("mspGeminiSummaryLoading");
+  var errorEl = document.getElementById("mspGeminiSummaryError");
+  var resultEl = document.getElementById("mspGeminiSummaryResult");
+
+  btn.disabled = true;
+  errorEl.hidden = true;
+  resultEl.hidden = true;
+  loadingEl.hidden = false;
+
+  try {
+    var input = mspBuildExecSummaryInput(auditModel, crawlData, speedData);
+    var prompt = mspBuildExecSummaryPrompt(input);
+    var raw = await callGemini(prompt, MSP_GEMINI_SUMMARY_SCHEMA);
+    var parsed = mspParseExecSummaryResponse(raw);
+    renderExecSummaryResult(parsed);
+    resultEl.hidden = false;
+  } catch (err) {
+    errorEl.textContent = (err && err.message) || "Gagal membuat ringkasan dengan AI.";
+    errorEl.hidden = false;
+  } finally {
+    loadingEl.hidden = true;
+    btn.disabled = false;
+  }
+}
+
 function escapeHtml(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;")
@@ -554,7 +681,26 @@ async function init() {
     renderStatTiles(auditModel.overall.counts);
     renderDetailSections(auditModel.categories);
     try { hostname = new URL(auditModel.url).hostname; } catch (e) { /* biarkan default */ }
+
+    var titleMetaBtn = document.getElementById("mspGeminiTitleMetaBtn");
+    if (auditModel.rawSignals) {
+      titleMetaBtn.addEventListener("click", function () {
+        handleTitleMetaAnalysis(auditModel.rawSignals);
+      });
+    } else {
+      // Hasil audit lama (sebelum fitur AI ada) tidak menyimpan rawSignals --
+      // minta audit ulang dari popup alih-alih gagal diam-diam.
+      titleMetaBtn.disabled = true;
+      titleMetaBtn.title = "Jalankan audit ulang dari popup ekstensi dulu untuk mengaktifkan fitur ini.";
+      document.getElementById("mspGeminiTitleMetaError").hidden = false;
+      document.getElementById("mspGeminiTitleMetaError").textContent =
+        "Hasil audit ini dibuat sebelum fitur analisis AI ada -- jalankan audit ulang dari popup ekstensi untuk mengaktifkannya.";
+    }
   }
+
+  document.getElementById("mspGeminiSummaryBtn").addEventListener("click", function () {
+    handleExecSummary(auditModel, crawlData, speedData);
+  });
 
   if (crawlData && crawlData.result) {
     renderCrawlSection(crawlData);

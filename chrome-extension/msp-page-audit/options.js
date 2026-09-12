@@ -1,41 +1,69 @@
 "use strict";
 
 var STORAGE_KEY = "mspPsiApiKey";
+var GEMINI_STORAGE_KEY = "mspGeminiApiKey";
 
-function showStatus(message, isError) {
-  var el = document.getElementById("mspStatus");
-  el.textContent = message;
-  el.className = "msp-status " + (isError ? "error" : "ok");
-  el.hidden = false;
-}
+/**
+ * Kedua key (PSI & Gemini) diatur lewat pola yang identik, jadi logikanya
+ * dipusatkan di sini dan dipanggil dua kali dengan ID elemen + storage key
+ * yang berbeda -- daripada menulis ulang save/toggle/clear untuk tiap key.
+ */
+function setupKeyField(config) {
+  var input = document.getElementById(config.inputId);
+  var statusEl = document.getElementById(config.statusId);
 
-async function init() {
-  var data = await chrome.storage.local.get(STORAGE_KEY);
-  var input = document.getElementById("mspApiKey");
-  if (data && data[STORAGE_KEY]) {
-    input.value = data[STORAGE_KEY];
+  function showStatus(message, isError) {
+    statusEl.textContent = message;
+    statusEl.className = "msp-status " + (isError ? "error" : "ok");
+    statusEl.hidden = false;
   }
 
-  document.getElementById("mspToggleKey").addEventListener("click", function (e) {
+  chrome.storage.local.get(config.storageKey).then(function (data) {
+    if (data && data[config.storageKey]) {
+      input.value = data[config.storageKey];
+    }
+  });
+
+  document.getElementById(config.toggleId).addEventListener("click", function (e) {
     var showing = input.type === "text";
     input.type = showing ? "password" : "text";
     e.target.textContent = showing ? "Tampilkan" : "Sembunyikan";
   });
 
-  document.getElementById("mspSaveKey").addEventListener("click", async function () {
+  document.getElementById(config.saveId).addEventListener("click", async function () {
     var value = input.value.trim();
     if (!value) {
       showStatus("API key kosong — isi dulu sebelum menyimpan.", true);
       return;
     }
-    await chrome.storage.local.set({ [STORAGE_KEY]: value });
+    await chrome.storage.local.set({ [config.storageKey]: value });
     showStatus("API key tersimpan di perangkat ini.", false);
   });
 
-  document.getElementById("mspClearKey").addEventListener("click", async function () {
-    await chrome.storage.local.remove(STORAGE_KEY);
+  document.getElementById(config.clearId).addEventListener("click", async function () {
+    await chrome.storage.local.remove(config.storageKey);
     input.value = "";
     showStatus("API key dihapus dari perangkat ini.", false);
+  });
+}
+
+function init() {
+  setupKeyField({
+    storageKey: STORAGE_KEY,
+    inputId: "mspApiKey",
+    toggleId: "mspToggleKey",
+    saveId: "mspSaveKey",
+    clearId: "mspClearKey",
+    statusId: "mspStatus"
+  });
+
+  setupKeyField({
+    storageKey: GEMINI_STORAGE_KEY,
+    inputId: "mspGeminiApiKey",
+    toggleId: "mspToggleGeminiKey",
+    saveId: "mspSaveGeminiKey",
+    clearId: "mspClearGeminiKey",
+    statusId: "mspGeminiStatus"
   });
 }
 
