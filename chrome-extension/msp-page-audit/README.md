@@ -39,6 +39,16 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
     untuk bot tersebut. Relevan karena ini menentukan apakah situs bisa
     dikutip ChatGPT/Perplexity/dll saat pengguna bertanya tentang bisnis
     terkait.
+  - **Profil Google Business / Maps**: heuristik yang mencari tautan ke
+    Google Maps/Business Profile (pola URL `g.page`, `maps.app.goo.gl`,
+    `goo.gl/maps`, `google.com/maps`, `business.google.com`) di antara
+    link keluar halaman maupun di properti `sameAs` pada JSON-LD.
+    **Bukan pengecekan resmi ke Google** — tidak ada API gratis untuk
+    "cek apakah URL ini punya profil GMB", jadi ini cuma mendeteksi
+    apakah situsnya sendiri menaut ke profilnya. Kalau ditemukan,
+    dihitung sebagai `pass` (skor naik); kalau tidak ditemukan, statusnya
+    `info` dan **tidak mengurangi skor**, karena bisa saja bisnisnya
+    sudah punya profil tapi belum menautkannya di situs (false negative).
 - **Gambar**: total gambar & yang tanpa atribut `alt`. Kalau ada temuan,
   laporan lengkap menampilkan daftar gambar yang bermasalah (URL gambar +
   "bagian" halaman tempat gambar itu berada, diambil dari `figcaption`
@@ -260,6 +270,12 @@ semua kasus.
   ada — dan pencocokan grup `User-agent` disederhanakan (satu agen per
   baris `User-agent`, bukan grup multi-agen penuh sesuai spesifikasi),
   konsisten dengan penyederhanaan `Disallow` prefix-match yang sudah ada.
+- Deteksi "Profil Google Business / Maps" murni heuristik pencocokan pola
+  URL (`MSP_GBP_LINK_PATTERN` di `report-model.js`) pada link halaman &
+  `sameAs` JSON-LD — bukan pemanggilan API Google Business Profile/Places
+  sungguhan (yang butuh API key + billing terpisah, di luar cakupan
+  versi ini). Hasil "tidak ditemukan" tidak dihitung sebagai kesalahan
+  di skor, persis karena heuristik ini bisa false negative.
 - Crawl v2 bukan crawler penuh ala mesin pencari: konkurensi & jeda antar
   request dibuat tetap (bukan makin agresif di tingkat Heavy/Ultra — cuma
   jumlah halamannya yang beda), dan link ke aset non-HTML (PDF, gambar,

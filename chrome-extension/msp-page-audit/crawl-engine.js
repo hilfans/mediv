@@ -300,6 +300,8 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
     } catch (e) { /* dilewati */ }
   });
 
+  var googleBusinessLink = mspFindGoogleBusinessLink(allLinks, jsonLdBlocks);
+
   return {
     url: pageUrl,
     origin: origin,
@@ -322,6 +324,7 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
     jsonLdTypes: jsonLdTypes,
     jsonLdErrors: jsonLdErrors,
     jsonLdBlocks: jsonLdBlocks,
+    googleBusinessLink: googleBusinessLink,
     wordCount: wordCount,
     internalLinks: internalLinks,
     externalLinks: externalLinks

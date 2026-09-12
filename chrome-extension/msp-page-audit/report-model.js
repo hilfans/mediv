@@ -222,6 +222,33 @@ function mspExtractDomSignals() {
     } catch (e) { /* URL tidak valid, dilewati */ }
   });
 
+  // Heuristik: cari tautan ke Google Maps/Business Profile (dulu "Google My
+  // Business") di antara link keluar halaman atau di properti "sameAs" JSON-LD.
+  // BUKAN pengecekan resmi ke Google -- tidak ada API gratis untuk itu. Kalau
+  // tidak ditemukan bukan berarti bisnisnya pasti tidak punya profil, bisa
+  // saja hanya belum ditautkan di situsnya.
+  var GBP_LINK_PATTERN = /(g\.page\/|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]{2,10}\/maps|business\.google\.com|maps\.google\.[a-z.]{2,10})/i;
+  function findGoogleBusinessLink(links, blocks) {
+    for (var i = 0; i < links.length; i++) {
+      if (GBP_LINK_PATTERN.test(links[i])) { return links[i]; }
+    }
+    for (var b = 0; b < blocks.length; b++) {
+      var items = blocks[b].items || [];
+      for (var it = 0; it < items.length; it++) {
+        var sameAs = items[it].fields && items[it].fields.sameAs;
+        if (sameAs && GBP_LINK_PATTERN.test(sameAs)) {
+          var urls = sameAs.match(/https?:\/\/\S+/g) || [];
+          for (var u = 0; u < urls.length; u++) {
+            if (GBP_LINK_PATTERN.test(urls[u])) { return urls[u].replace(/[,;]+$/, ""); }
+          }
+          return sameAs;
+        }
+      }
+    }
+    return "";
+  }
+  var googleBusinessLink = findGoogleBusinessLink(externalLinksList, jsonLdBlocks);
+
   return {
     url: location.href,
     origin: origin,
@@ -243,6 +270,7 @@ function mspExtractDomSignals() {
     jsonLdTypes: jsonLdTypes,
     jsonLdErrors: jsonLdErrors,
     jsonLdBlocks: jsonLdBlocks,
+    googleBusinessLink: googleBusinessLink,
     wordCount: wordCount,
     internalLinks: internalLinksList.length,
     externalLinks: externalLinksList.length,
@@ -426,6 +454,33 @@ function mspSummarizeSchemaItem(item) {
   return fields;
 }
 
+/**
+ * Versi top-level dari findGoogleBusinessLink() yang di-inline di dalam
+ * mspExtractDomSignals() di atas (alasan sama seperti mspSummarizeSchemaItem
+ * dkk. -- fungsi itu disuntikkan lewat chrome.scripting). Dipakai oleh
+ * crawl-engine.js supaya logikanya tidak ditulis dua kali.
+ */
+var MSP_GBP_LINK_PATTERN = /(g\.page\/|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]{2,10}\/maps|business\.google\.com|maps\.google\.[a-z.]{2,10})/i;
+function mspFindGoogleBusinessLink(links, blocks) {
+  for (var i = 0; i < links.length; i++) {
+    if (MSP_GBP_LINK_PATTERN.test(links[i])) { return links[i]; }
+  }
+  for (var b = 0; b < blocks.length; b++) {
+    var items = blocks[b].items || [];
+    for (var it = 0; it < items.length; it++) {
+      var sameAs = items[it].fields && items[it].fields.sameAs;
+      if (sameAs && MSP_GBP_LINK_PATTERN.test(sameAs)) {
+        var urls = sameAs.match(/https?:\/\/\S+/g) || [];
+        for (var u = 0; u < urls.length; u++) {
+          if (MSP_GBP_LINK_PATTERN.test(urls[u])) { return urls[u].replace(/[,;]+$/, ""); }
+        }
+        return sameAs;
+      }
+    }
+  }
+  return "";
+}
+
 function mspScoreFromCounts(counts) {
   var total = counts.pass + counts.warn + counts.fail;
   if (total === 0) { return 0; }
@@ -583,6 +638,17 @@ function mspEvaluate(dom, net) {
     } else {
       socialRows.push(mspRow("pass", "Crawler AI Bot (robots.txt)", "Tidak ada crawler AI utama (GPTBot, ClaudeBot, PerplexityBot, dst.) yang diblokir robots.txt."));
     }
+  }
+
+  // Heuristik, bukan konfirmasi resmi dari Google -- lihat catatan di
+  // mspExtractDomSignals(). Absennya tautan tidak dihitung ke skor (status
+  // "info"), karena banyak bisnis punya profil tanpa menautkannya di situs.
+  if (dom.googleBusinessLink) {
+    socialRows.push(mspRow("pass", "Profil Google Business / Maps",
+      "Ditemukan tautan ke Google Maps/Business Profile: " + dom.googleBusinessLink));
+  } else {
+    socialRows.push(mspRow("info", "Profil Google Business / Maps",
+      "Tidak ditemukan tautan ke Google Maps/Business Profile di halaman ini maupun di JSON-LD (sameAs). Ini bukan konfirmasi resmi dari Google -- bisnis bisa saja sudah punya profil tapi belum menautkannya di situs. Kalau memang belum punya, disarankan mendaftar lewat google.com/business."));
   }
 
   buildCategory("social", "Sosial, Data Terstruktur & AI Bot", socialRows);
