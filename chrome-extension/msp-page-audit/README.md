@@ -223,7 +223,11 @@ mengirim **cuplikan teks halaman** (title, meta description, hingga
 langsung dari browser pengguna ke Gemini API — dijelaskan eksplisit di
 kartu Options dan di [`PRIVACY.md`](./PRIVACY.md).
 
-Model yang dipakai: `gemini-2.5-flash`, dengan
+Model yang dipakai: `gemini-3.6-flash` (diperbarui dari `gemini-2.5-flash`
+setelah Google men-deprecate model itu untuk pengguna baru — ganti model
+cukup ubah `MSP_GEMINI_MODEL` di `gemini-model.js`, tidak ada bagian lain
+yang perlu disentuh selama bentuk respons `generateContent` tidak
+berubah), dengan
 [controlled generation](https://ai.google.dev/gemini-api/docs/structured-output)
 (`responseSchema`) supaya keluaran selalu JSON valid sesuai skema yang
 diharapkan — bukan mengandalkan instruksi teks "balas dalam JSON" yang

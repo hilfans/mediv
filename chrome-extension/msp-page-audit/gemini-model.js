@@ -9,7 +9,7 @@
    (diisi pengguna sendiri lewat halaman Options) oleh pemanggil (report.js).
    ============================================================ */
 
-var MSP_GEMINI_MODEL = "gemini-2.5-flash";
+var MSP_GEMINI_MODEL = "gemini-3.6-flash";
 var MSP_GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/" + MSP_GEMINI_MODEL + ":generateContent";
 
 function mspBuildGeminiUrl(apiKey) {
