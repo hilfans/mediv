@@ -142,6 +142,19 @@ body {
   font-size: 13px;
 }
 
+/* ---------- Peringatan domain campur (data lama beda domain) ---------- */
+
+.msp-domain-mismatch-notice {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--msp-warn-bg);
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
 /* ---------- Halaman laporan ---------- */
 
 .msp-print-page {

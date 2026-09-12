@@ -88,6 +88,18 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   gabungan meski dipicu dari halaman fitur mana pun. Bagian yang datanya
   belum ada (mis. belum pernah crawl) otomatis disembunyikan, bukan
   ditampilkan kosong.
+- **Filter domain otomatis**: karena Audit On-Page, Crawl Situs, dan Cek
+  Kecepatan masing-masing punya halaman fiturnya sendiri yang menimpa
+  storage-nya sendiri secara independen, ketiganya bisa saja menyimpan
+  hasil untuk **domain yang berbeda-beda** dari sesi-sesi sebelumnya
+  (mis. audit satu halaman baru saja dijalankan untuk domain A, padahal
+  hasil Crawl Situs yang tersimpan masih dari domain B yang di-scan
+  kemarin). `report.html` memilih domain acuan dari hasil yang **paling
+  baru dibuat** (`generatedAt`), lalu menyembunyikan bagian mana pun yang
+  domainnya tidak cocok — bukan ikut menampilkannya tercampur begitu
+  saja — dan menunjukkan catatan kuning di atas laporan yang menyebutkan
+  bagian mana yang disembunyikan dan kenapa. Lihat
+  `mspFilterByReferenceDomain()` di `report.js`.
 
 Semua pengecekan di atas berjalan hanya untuk **tab yang sedang aktif**,
 dipicu saat ikon ekstensi diklik.

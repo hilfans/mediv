@@ -654,13 +654,63 @@ function renderSpeedSection(speedData) {
   }
 }
 
+function mspHostnameOf(urlStr) {
+  try { return new URL(urlStr).hostname; } catch (e) { return null; }
+}
+
+/**
+ * Audit satu halaman, Crawl Situs, dan Cek Kecepatan masing-masing punya
+ * halaman fiturnya sendiri yang menimpa storage-nya sendiri, independen
+ * satu sama lain -- jadi kalau pengguna baru saja audit domain A tapi
+ * sebelumnya pernah menjalankan Crawl Situs/Cek Kecepatan untuk domain B,
+ * hasil lama domain B itu MASIH tersimpan dan tidak boleh ikut tercampur
+ * ke laporan gabungan domain A begitu saja. Domain acuan dipilih dari
+ * hasil yang paling baru dibuat (generatedAt); hasil lain yang domainnya
+ * beda dianggap tidak ada untuk laporan yang sedang dibuka ini (datanya
+ * tetap ada di storage apa adanya, cuma tidak dirender di sini).
+ */
+function mspFilterByReferenceDomain(auditModel, crawlData, speedData) {
+  var entries = [];
+  if (auditModel) { entries.push({ generatedAt: auditModel.generatedAt, hostname: mspHostnameOf(auditModel.url) }); }
+  if (crawlData && crawlData.result) { entries.push({ generatedAt: crawlData.generatedAt, hostname: mspHostnameOf(crawlData.result.origin) }); }
+  if (speedData && speedData.parsed) { entries.push({ generatedAt: speedData.generatedAt, hostname: mspHostnameOf(speedData.targetUrl) }); }
+
+  if (entries.length < 2) {
+    return { auditModel: auditModel, crawlData: crawlData, speedData: speedData, excluded: [] };
+  }
+
+  entries.sort(function (a, b) { return (b.generatedAt || "").localeCompare(a.generatedAt || ""); });
+  var referenceHostname = entries[0].hostname;
+
+  var excluded = [];
+  var outAudit = auditModel;
+  var outCrawl = crawlData;
+  var outSpeed = speedData;
+
+  if (outAudit && mspHostnameOf(outAudit.url) !== referenceHostname) {
+    excluded.push({ label: "Audit SEO On-Page", hostname: mspHostnameOf(outAudit.url) });
+    outAudit = null;
+  }
+  if (outCrawl && outCrawl.result && mspHostnameOf(outCrawl.result.origin) !== referenceHostname) {
+    excluded.push({ label: "Crawl Situs", hostname: mspHostnameOf(outCrawl.result.origin) });
+    outCrawl = null;
+  }
+  if (outSpeed && outSpeed.parsed && mspHostnameOf(outSpeed.targetUrl) !== referenceHostname) {
+    excluded.push({ label: "Cek Kecepatan", hostname: mspHostnameOf(outSpeed.targetUrl) });
+    outSpeed = null;
+  }
+
+  return { auditModel: outAudit, crawlData: outCrawl, speedData: outSpeed, excluded: excluded, referenceHostname: referenceHostname };
+}
+
 async function init() {
   var autoprint = new URLSearchParams(window.location.search).get("autoprint") === "1";
 
   var data = await chrome.storage.local.get(["mspLastAudit", "mspLastCrawl", "mspLastSpeedCheck"]);
-  var auditModel = data.mspLastAudit;
-  var crawlData = data.mspLastCrawl;
-  var speedData = data.mspLastSpeedCheck;
+  var filtered = mspFilterByReferenceDomain(data.mspLastAudit, data.mspLastCrawl, data.mspLastSpeedCheck);
+  var auditModel = filtered.auditModel;
+  var crawlData = filtered.crawlData;
+  var speedData = filtered.speedData;
 
   if (!auditModel && !crawlData && !speedData) {
     document.getElementById("mspEmptyState").hidden = false;
@@ -668,6 +718,15 @@ async function init() {
   }
 
   document.getElementById("mspReportRoot").hidden = false;
+
+  if (filtered.excluded.length) {
+    var mismatchEl = document.getElementById("mspDomainMismatchNotice");
+    mismatchEl.hidden = false;
+    mismatchEl.textContent = "Catatan: hasil " +
+      filtered.excluded.map(function (e) { return e.label + " (" + (e.hostname || "domain lain") + ")"; }).join(" dan ") +
+      " tidak ditampilkan di laporan ini karena berasal dari domain berbeda dari data yang paling baru dibuat (" +
+      filtered.referenceHostname + "). Jalankan ulang fitur terkait untuk domain ini kalau ingin digabungkan dalam satu laporan.";
+  }
 
   var hostname = "halaman";
 
