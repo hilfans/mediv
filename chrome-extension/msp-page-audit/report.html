@@ -19,13 +19,15 @@
       </label>
       <a id="mspCrawlLink" class="msp-crawl-link" href="crawl.html" target="_blank" rel="noopener noreferrer">Crawl Situs &amp; Cek Broken Link &rarr;</a>
       <a id="mspSpeedLink" class="msp-crawl-link" href="speed.html" target="_blank" rel="noopener noreferrer">Cek Kecepatan (Lighthouse) &rarr;</a>
+      <a id="mspBacklinkLink" class="msp-crawl-link" href="backlink.html" target="_blank" rel="noopener noreferrer">Cek Backlink (Bing Webmaster Tools) &rarr;</a>
       <button id="mspDownloadPdf" class="msp-download-btn">Unduh sebagai PDF</button>
     </div>
     <p class="msp-toolbar-hint">
       Tombol di atas membuka kotak dialog cetak browser — pilih tujuan
       <strong>"Simpan sebagai PDF"</strong> untuk mengunduhnya. Laporan ini
-      otomatis menggabungkan Audit SEO On-Page, Crawl Situs, dan Cek
-      Kecepatan — bagian mana pun yang sudah pernah Anda jalankan.
+      otomatis menggabungkan Audit SEO On-Page, Crawl Situs, Cek
+      Kecepatan, dan Cek Backlink — bagian mana pun yang sudah pernah Anda
+      jalankan.
     </p>
   </div>
 
@@ -215,19 +217,41 @@
       </section>
     </section>
 
+    <section id="mspBacklinkSection" hidden>
+      <h2 class="msp-section-title">Cek Backlink (Bing Webmaster Tools)</h2>
+      <dl class="msp-report-meta msp-section-meta">
+        <div><dt>Situs</dt><dd id="mspBacklinkSite">-</dd></div>
+        <div><dt>Tanggal</dt><dd id="mspBacklinkDate">-</dd></div>
+      </dl>
+
+      <section class="msp-stat-tiles" id="mspBacklinkStatTiles"></section>
+
+      <section class="msp-crawl-block">
+        <h3>Halaman dengan Backlink Terbanyak</h3>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspBacklinkTable">
+            <thead><tr><th>Halaman</th><th>Jumlah Backlink</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="mspBacklinkEmpty" class="msp-empty-note" hidden>Tidak ada halaman dengan backlink ditemukan.</p>
+      </section>
+    </section>
+
     <footer class="msp-report-footer">
       Laporan ini dibuat otomatis oleh ekstensi <strong>MSP Page Audit</strong>,
       layanan digital dari Divisi Electronic Business
       <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer"><strong>PT Mitra Solusindo Pratama</strong></a>,
-      menggabungkan hasil audit on-page, crawl situs, dan/atau cek kecepatan
-      yang tersimpan di perangkat ini. Hasil bersifat estimasi teknis, bukan
-      jaminan peringkat mesin pencari.
+      menggabungkan hasil audit on-page, crawl situs, cek kecepatan,
+      dan/atau cek backlink yang tersimpan di perangkat ini. Hasil bersifat
+      estimasi teknis, bukan jaminan peringkat mesin pencari.
     </footer>
   </main>
 
   <script src="report-model.js"></script>
   <script src="speed-model.js"></script>
   <script src="gemini-model.js"></script>
+  <script src="bing-model.js"></script>
   <script src="report.js"></script>
 </body>
 </html>

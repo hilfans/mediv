@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cek Backlink — MSP Page Audit</title>
+  <link rel="stylesheet" href="backlink.css">
+</head>
+<body>
+  <div class="msp-toolbar msp-no-print">
+    <div class="msp-toolbar-inner">
+      <img src="icons/icon32.png" alt="" class="msp-toolbar-logo">
+      <div class="msp-toolbar-title">
+        <strong>MSP Page Audit</strong>
+        <span>Cek Backlink (Bing Webmaster Tools)</span>
+      </div>
+      <button id="mspOpenOptions" class="msp-secondary-btn">Atur API Key</button>
+      <button id="mspDownloadPdf" class="msp-download-btn" hidden>Unduh sebagai PDF</button>
+    </div>
+    <p class="msp-toolbar-hint">
+      PDF akan digabung otomatis dengan hasil Audit SEO On-Page, Crawl
+      Situs, dan Cek Kecepatan (jika ada) dalam satu laporan.
+    </p>
+  </div>
+
+  <main class="msp-backlink-page">
+
+    <section id="mspNoKeyState" class="msp-setup-card" hidden>
+      <h1>API Key Belum Diatur</h1>
+      <p class="msp-setup-desc">
+        Fitur ini memanggil <strong>Bing Webmaster Tools API</strong> untuk
+        melihat backlink situs Anda. Key tersimpan hanya di perangkat ini,
+        tidak pernah dikirim ke server PT MSP.
+      </p>
+      <button id="mspGoToOptions" class="msp-primary-btn">Atur API Key Sekarang</button>
+    </section>
+
+    <section id="mspSetupForm" class="msp-setup-card">
+      <h1>Cek Backlink Situs</h1>
+      <p class="msp-setup-desc">
+        Menampilkan jumlah & daftar halaman yang menaut ke situs Anda,
+        langsung dari data Bing Webmaster Tools.
+      </p>
+      <div class="msp-ownership-note">
+        <strong>Penting:</strong> fitur ini hanya bisa menampilkan data
+        untuk situs yang sudah Anda <strong>tambahkan &amp; verifikasi
+        kepemilikannya</strong> di akun Bing Webmaster Tools yang API
+        key-nya Anda pakai — bukan untuk situs siapa pun secara bebas.
+      </div>
+
+      <label class="msp-field">
+        URL situs (origin, bukan halaman spesifik)
+        <input type="url" id="mspTargetUrl" placeholder="https://www.msp.web.id">
+      </label>
+
+      <button id="mspRunCheck" class="msp-primary-btn">Cek Backlink</button>
+    </section>
+
+    <section id="mspLoading" class="msp-loading-card" hidden>
+      <div class="msp-spinner" aria-hidden="true"></div>
+      <p>Memanggil Bing Webmaster Tools&hellip;</p>
+    </section>
+
+    <section id="mspErrorState" class="msp-error-card" hidden>
+      <p id="mspErrorText"></p>
+      <button id="mspRetry" class="msp-secondary-btn">Coba Lagi</button>
+    </section>
+
+    <section id="mspResults" class="msp-results" hidden>
+      <header class="msp-report-header">
+        <div class="msp-report-header-brand">
+          <img src="icons/icon48.png" alt="" class="msp-report-logo">
+          <div>
+            <h1>Laporan Backlink</h1>
+            <p class="msp-report-sub">
+              <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer">PT Mitra Solusindo Pratama &middot; msp.web.id</a>
+            </p>
+          </div>
+        </div>
+        <dl class="msp-report-meta">
+          <div><dt>Situs</dt><dd id="mspResultSite">-</dd></div>
+          <div><dt>Tanggal</dt><dd id="mspResultDate">-</dd></div>
+        </dl>
+      </header>
+
+      <section class="msp-stat-tiles" id="mspBacklinkStatTiles"></section>
+
+      <section class="msp-crawl-block">
+        <h2>Halaman dengan Backlink Terbanyak</h2>
+        <div class="msp-table-wrap">
+          <table class="msp-table" id="mspBacklinkTable">
+            <thead><tr><th>Halaman</th><th>Jumlah Backlink</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="mspBacklinkEmpty" class="msp-empty-note" hidden>Tidak ada halaman dengan backlink ditemukan.</p>
+      </section>
+
+      <button id="mspNewCheck" class="msp-secondary-btn msp-no-print">Cek Situs Lain</button>
+
+      <footer class="msp-report-footer">
+        Data backlink berasal langsung dari
+        <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer">Bing Webmaster Tools API</a>.
+        Laporan ini dibuat oleh ekstensi <strong>MSP Page Audit</strong>,
+        layanan digital dari Divisi Electronic Business
+        <a href="https://www.msp.web.id/" target="_blank" rel="noopener noreferrer"><strong>PT Mitra Solusindo Pratama</strong></a>.
+      </footer>
+    </section>
+  </main>
+
+  <script src="bing-model.js"></script>
+  <script src="backlink.js"></script>
+</body>
+</html>

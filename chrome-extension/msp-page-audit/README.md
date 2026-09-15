@@ -79,26 +79,27 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   **"Belum dilakukan tes"** kalau belum, supaya admin langsung tahu tanpa
   perlu membuka bagian Cek Kecepatan secara terpisah.
 - **Satu PDF gabungan untuk semua fitur**: `report.html` selalu merender
-  ketiga bagian yang datanya tersimpan di perangkat — Audit SEO On-Page,
-  Crawl Situs (`mspLastCrawl`), dan Cek Kecepatan (`mspLastSpeedCheck`) —
-  sebagai satu laporan berurutan, bukan tiga PDF terpisah. Klik "Unduh
-  sebagai PDF" di halaman **Crawl Situs** atau **Cek Kecepatan** membuka
+  keempat bagian yang datanya tersimpan di perangkat — Audit SEO On-Page,
+  Crawl Situs (`mspLastCrawl`), Cek Kecepatan (`mspLastSpeedCheck`), dan
+  Cek Backlink (`mspLastBacklinkCheck`) — sebagai satu laporan berurutan,
+  bukan PDF terpisah-terpisah. Klik "Unduh sebagai PDF" di halaman
+  **Crawl Situs**, **Cek Kecepatan**, atau **Cek Backlink** membuka
   `report.html?autoprint=1` di tab baru, yang otomatis memicu dialog cetak
   begitu semua bagian selesai dirender — jadi hasilnya tetap satu PDF
   gabungan meski dipicu dari halaman fitur mana pun. Bagian yang datanya
   belum ada (mis. belum pernah crawl) otomatis disembunyikan, bukan
   ditampilkan kosong.
-- **Filter domain otomatis**: karena Audit On-Page, Crawl Situs, dan Cek
-  Kecepatan masing-masing punya halaman fiturnya sendiri yang menimpa
-  storage-nya sendiri secara independen, ketiganya bisa saja menyimpan
-  hasil untuk **domain yang berbeda-beda** dari sesi-sesi sebelumnya
-  (mis. audit satu halaman baru saja dijalankan untuk domain A, padahal
-  hasil Crawl Situs yang tersimpan masih dari domain B yang di-scan
-  kemarin). `report.html` memilih domain acuan dari hasil yang **paling
-  baru dibuat** (`generatedAt`), lalu menyembunyikan bagian mana pun yang
-  domainnya tidak cocok — bukan ikut menampilkannya tercampur begitu
-  saja — dan menunjukkan catatan kuning di atas laporan yang menyebutkan
-  bagian mana yang disembunyikan dan kenapa. Lihat
+- **Filter domain otomatis**: karena Audit On-Page, Crawl Situs, Cek
+  Kecepatan, dan Cek Backlink masing-masing punya halaman fiturnya sendiri
+  yang menimpa storage-nya sendiri secara independen, keempatnya bisa saja
+  menyimpan hasil untuk **domain yang berbeda-beda** dari sesi-sesi
+  sebelumnya (mis. audit satu halaman baru saja dijalankan untuk domain A,
+  padahal hasil Crawl Situs yang tersimpan masih dari domain B yang
+  di-scan kemarin). `report.html` memilih domain acuan dari hasil yang
+  **paling baru dibuat** (`generatedAt`), lalu menyembunyikan bagian mana
+  pun yang domainnya tidak cocok — bukan ikut menampilkannya tercampur
+  begitu saja — dan menunjukkan catatan kuning di atas laporan yang
+  menyebutkan bagian mana yang disembunyikan dan kenapa. Lihat
   `mspFilterByReferenceDomain()` di `report.js`.
 
 Semua pengecekan di atas berjalan hanya untuk **tab yang sedang aktif**,
@@ -278,6 +279,92 @@ hasil audit yang tersimpan SEBELUM update ini tidak punya field tersebut
 nonaktif dengan pesan yang meminta audit ulang dari popup, bukan gagal
 tanpa penjelasan.
 
+## Cakupan v5 — Cek Backlink (Bing Webmaster Tools, opsional)
+
+Dibuka lewat tombol **"Cek Backlink (Bing Webmaster Tools)"** di popup atau
+laporan lengkap (`backlink.html`). Memanggil **Bing Webmaster Tools API**
+milik Microsoft untuk menampilkan jumlah & daftar halaman yang menaut ke
+situs target — data yang selama ini sengaja tidak disertakan di ekstensi
+ini (lihat riwayat di bagian "Batasan yang disengaja" versi-versi
+sebelumnya) karena data backlink umumnya hanya tersedia lewat database
+proprietary Moz/Ahrefs/SEMrush berbayar. Bing Webmaster Tools menyediakan
+data serupa secara gratis, tapi dengan **batasan cakupan yang penting**
+di bawah.
+
+- Total backlink & jumlah halaman bertaut, ditampilkan sebagai stat tile.
+- Tabel halaman dengan backlink terbanyak, dengan tombol "Lihat rincian"
+  per baris untuk memuat daftar URL yang benar-benar menaut ke halaman
+  itu (memanggil endpoint `GetUrlLinks` on-demand, bukan dimuat semua di
+  awal supaya tidak boros kuota API untuk situs dengan banyak halaman).
+- Diekspor ke PDF lewat laporan gabungan yang sama dengan Audit On-Page,
+  Crawl Situs, dan Cek Kecepatan (lihat bagian "Satu PDF gabungan" di
+  atas) — laporan gabungan menampilkan ringkasan (stat tile + tabel
+  halaman terbanyak) tanpa tombol rincian per baris, karena itu butuh
+  panggilan API baru yang tidak cocok untuk laporan statis/cetak.
+
+### Keterbatasan cakupan (WAJIB dibaca sebelum pakai)
+
+**Bing Webmaster Tools API HANYA mengembalikan data untuk situs yang
+sudah ditambahkan & diverifikasi kepemilikannya** di akun Bing Webmaster
+Tools yang API key-nya dipakai — beda fundamental dari Cek Kecepatan
+(PSI) yang bisa dipakai untuk URL siapa pun secara bebas. Kalau domain
+yang diaudit belum diverifikasi di akun itu, fitur ini menampilkan pesan
+error yang menjelaskan hal ini, bukan data kosong atau bug. Ini bukan
+"cek backlink kompetitor secara bebas" seperti Ahrefs/SEMrush — cuma
+untuk situs yang memang dikelola sendiri oleh pemilik API key.
+
+### Ketidakpastian teknis yang belum terverifikasi langsung
+
+Dua hal berikut **tidak bisa diverifikasi secara langsung** saat fitur
+ini dibangun, karena domain `ssl.bing.com` diblokir oleh kebijakan
+jaringan lingkungan pengembangan (`curl` ke domain itu gagal dengan
+`403 CONNECT` di level gateway):
+
+1. **Skema respons JSON API ini** — struktur field `GetLinkCounts` dan
+   `GetUrlLinks` disusun berdasarkan dokumentasi publik Bing Webmaster
+   Tools API (termasuk kemungkinan pembungkus gaya ASP.NET AJAX `{"d":
+   [...]}`) dan penanganan defensif di `bing-model.js`
+   (`mspUnwrapBingPayload`, `mspParseBingLinkCountsResponse`,
+   `mspParseBingUrlLinksResponse`), tapi belum pernah diuji melawan
+   respons sungguhan dari API-nya.
+2. **Dukungan CORS API ini** — tidak diketahui apakah `ssl.bing.com`
+   mengirim header CORS yang mengizinkan `fetch()` langsung dari origin
+   `chrome-extension://`. Sebagai jaring pengaman, `backlink.js` secara
+   eksplisit meminta **optional host permission** `https://ssl.bing.com/*`
+   lewat `chrome.permissions.request()` sebelum panggilan API pertama —
+   host permission yang benar-benar di-grant membuat Chrome **melewati**
+   pembatasan CORS untuk origin itu, apa pun header CORS yang dikirim
+   API-nya. Kalau ternyata caranya tetap gagal (`fetch()` melempar
+   `TypeError: Failed to fetch`), `backlink.js` menampilkan pesan error
+   yang menyebutkan kemungkinan ini secara eksplisit (lihat
+   `describeNetworkError()`), termasuk bahwa perbaikannya butuh
+   penyesuaian arsitektur (server perantara) — bukan sesuatu yang bisa
+   diperbaiki dari sisi ekstensi murni client-side.
+
+**Kalau Anda menguji fitur ini dengan API key Bing Webmaster Tools asli**,
+laporkan hasilnya (berhasil/gagal, pesan error apa kalau gagal) supaya
+kedua ketidakpastian di atas bisa diperbaiki berdasarkan data nyata,
+mengikuti pola yang sama seperti perbaikan `gemini-3.6-flash` sebelumnya.
+
+### API Key Bing Webmaster Tools (opsional, terpisah dari key PSI & Gemini)
+
+Diatur lewat halaman **Options**, kartu ketiga terpisah dari API key PSI
+dan Gemini. Buat lewat
+[Bing Webmaster Tools](https://www.bing.com/webmasters) — tambahkan &
+verifikasi situs Anda dulu, lalu buat API key lewat menu
+**Settings &rarr; API Access**. Sama seperti key lain: **tidak pernah
+ditulis di kode sumber**, disimpan hanya di `chrome.storage.local` milik
+pengguna, dan dipakai langsung dari browser ke Bing Webmaster Tools API —
+tidak lewat server PT MSP.
+
+**Beda penting dari API key Google**: Bing Webmaster Tools **tidak
+menyediakan** mekanisme pembatasan HTTP referrer seperti Google Cloud
+Console. Kalau key ini bocor, satu-satunya cara memulihkannya adalah
+membuat key baru dari dashboard Bing Webmaster Tools dan menghapus yang
+lama — tidak ada langkah "Application restriction" tambahan yang bisa
+ditambahkan sebelum publish seperti pada key PSI/Gemini. Lihat
+[`PUBLISHING.md`](./PUBLISHING.md) untuk detail lengkapnya.
+
 ## Izin yang dipakai
 
 - `activeTab`, `scripting`, `storage` — wajib, terpasang sejak instalasi,
@@ -292,6 +379,12 @@ tanpa penjelasan.
   `chrome.permissions.request()` — tetap didaftarkan sebagai dokumentasi
   transparan endpoint mana saja yang dihubungi ekstensi ini (dipakai juga
   sebagai acuan isi `PRIVACY.md`), bukan karena secara teknis wajib.
+- `https://ssl.bing.com/*` — **opsional**, untuk Bing Webmaster Tools API
+  (fitur Cek Backlink). Berbeda dari dua endpoint Google di atas, dukungan
+  CORS endpoint ini **belum terverifikasi** (lihat "Cakupan v5" di atas),
+  jadi `backlink.js` secara aktif meminta permission ini lewat
+  `chrome.permissions.request()` sebelum panggilan API pertama — bukan
+  cuma didaftarkan sebagai dokumentasi seperti endpoint Google.
 
 ## Arsitektur kode
 
@@ -313,10 +406,24 @@ tanpa penjelasan.
   tiap fitur AI, memanggil endpoint Gemini, dan memvalidasi/mem-parsing
   responsnya. Pola sama persis dengan `speed-model.js` (tidak menyentuh
   DOM/chrome.*, tidak ada API key tertanam). Dipakai oleh `report.js`.
+- `bing-model.js` — fungsi murni untuk menyusun URL permintaan Bing
+  Webmaster Tools API (`GetLinkCounts`, `GetUrlLinks`) dan mem-parsing
+  responsnya, termasuk penanganan defensif untuk kemungkinan pembungkus
+  `{"d": [...]}` ala ASP.NET AJAX dan pesan error khusus untuk situs yang
+  belum diverifikasi kepemilikannya. Pola sama persis dengan
+  `speed-model.js`/`gemini-model.js`. Dipakai oleh `backlink.js`.
+- `backlink.js`/`backlink.html`/`backlink.css` — halaman fitur Cek
+  Backlink, berjalan di konteksnya sendiri (bukan disuntik ke tab
+  manapun), meminta optional host permission `ssl.bing.com` lewat
+  `chrome.permissions.request()` sebelum panggilan API pertama sebagai
+  jaring pengaman CORS. Menyimpan hasil ke `mspLastBacklinkCheck` di
+  `chrome.storage.local`, dibaca ulang oleh `report.js` untuk laporan
+  gabungan.
 - `options.html`/`options.js` — halaman Options standar Chrome untuk
-  menyimpan API key PSI dan API key Gemini (dua field terpisah) di
-  `chrome.storage.local`, lewat satu fungsi `setupKeyField()` yang
-  dipakai ulang untuk kedua key supaya logikanya tidak ditulis dua kali.
+  menyimpan API key PSI, Gemini, dan Bing Webmaster Tools (tiga field
+  terpisah) di `chrome.storage.local`, lewat satu fungsi
+  `setupKeyField()` yang dipakai ulang untuk ketiga key supaya logikanya
+  tidak ditulis tiga kali.
 
 ## Cara memasang untuk pengujian (mode developer)
 
@@ -332,7 +439,8 @@ terdaftar, ada biaya pendaftaran satu kali dari Google).
 
 ## Catatan implementasi penting
 
-Semua file CSS (`popup.css`, `report.css`, `crawl.css`) punya aturan global
+Semua file CSS (`popup.css`, `report.css`, `crawl.css`, `speed.css`,
+`backlink.css`) punya aturan global
 `[hidden] { display: none !important; }`. Tanpa ini, elemen yang diberi
 `display: flex`/`grid` untuk kebutuhan layout (mis. modal konfirmasi,
 `.msp-results`) akan **mengalahkan** gaya bawaan browser untuk atribut
@@ -346,9 +454,16 @@ semua kasus.
 
 ## Batasan yang disengaja
 
-- **DA (Domain Authority), backlink, dan traffic** sengaja tidak
-  disertakan — data ini hanya ada di database proprietary Moz/Ahrefs/SEMrush
-  dan butuh API berbayar pihak ketiga (sudah dibahas terpisah).
+- **DA (Domain Authority) dan traffic** sengaja tidak disertakan — data
+  ini hanya ada di database proprietary Moz/Ahrefs/SEMrush dan butuh API
+  berbayar pihak ketiga. **Backlink** sudah dicakup sejak v5 lewat Bing
+  Webmaster Tools API (gratis, tapi dengan keterbatasan cakupan yang
+  signifikan — lihat "Cakupan v5" di atas), jadi bukan lagi batasan mutlak
+  seperti DA/traffic.
+- Fitur Cek Backlink (v5) hanya bisa menampilkan data untuk situs yang
+  sudah diverifikasi kepemilikannya di akun Bing Webmaster Tools pemilik
+  API key — bukan pengecekan backlink bebas untuk situs siapa pun seperti
+  Ahrefs/SEMrush (lihat "Keterbatasan cakupan" di bagian Cakupan v5).
 - Deteksi JSON-LD menampilkan properti kunci per blok dan mendeteksi typo
   kapitalisasi `@type` terhadap daftar tipe umum (`MSP_KNOWN_SCHEMA_TYPES`
   di `report-model.js`, sekitar 30 tipe paling sering dipakai) — bukan

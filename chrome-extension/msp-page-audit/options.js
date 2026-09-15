@@ -2,11 +2,13 @@
 
 var STORAGE_KEY = "mspPsiApiKey";
 var GEMINI_STORAGE_KEY = "mspGeminiApiKey";
+var BING_STORAGE_KEY = "mspBingApiKey";
 
 /**
- * Kedua key (PSI & Gemini) diatur lewat pola yang identik, jadi logikanya
- * dipusatkan di sini dan dipanggil dua kali dengan ID elemen + storage key
- * yang berbeda -- daripada menulis ulang save/toggle/clear untuk tiap key.
+ * Ketiga key (PSI, Gemini, Bing) diatur lewat pola yang identik, jadi
+ * logikanya dipusatkan di sini dan dipanggil berkali-kali dengan ID
+ * elemen + storage key yang berbeda -- daripada menulis ulang
+ * save/toggle/clear untuk tiap key.
  */
 function setupKeyField(config) {
   var input = document.getElementById(config.inputId);
@@ -64,6 +66,15 @@ function init() {
     saveId: "mspSaveGeminiKey",
     clearId: "mspClearGeminiKey",
     statusId: "mspGeminiStatus"
+  });
+
+  setupKeyField({
+    storageKey: BING_STORAGE_KEY,
+    inputId: "mspBingApiKey",
+    toggleId: "mspToggleBingKey",
+    saveId: "mspSaveBingKey",
+    clearId: "mspClearBingKey",
+    statusId: "mspBingStatus"
   });
 }
 

@@ -17,7 +17,8 @@ Cloud Console / Google AI Studio, dilakukan SETELAH ekstensi diupload
 
 Chrome Web Store **mewajibkan** URL kebijakan privasi yang bisa diakses
 publik untuk ekstensi yang meminta host permission seperti ini (dipakai
-fitur Crawl Situs, Cek Kecepatan, dan fitur AI Gemini).
+fitur Crawl Situs, Cek Kecepatan, fitur AI Gemini, dan Cek Backlink Bing
+Webmaster Tools).
 
 1. Isi tanggal berlaku di `PRIVACY.md` (folder sumber ekstensi ini).
 2. Publikasikan isinya sebagai halaman di **msp.web.id** (mis.
@@ -46,11 +47,12 @@ fitur Crawl Situs, Cek Kecepatan, dan fitur AI Gemini).
    langkah 2, lalu centang jenis data yang diproses ekstensi sesuai
    `PRIVACY.md`: minimal **Website content** (konten halaman yang
    diaudit). Isi juga field **"Single purpose"** dan justifikasi tiap
-   permission (`activeTab`, `scripting`, `storage`, dan ketiga optional
-   host permission) — jelaskan singkat sesuai fungsinya masing-masing
-   (lihat README.md bagian "Izin yang dipakai" sebagai referensi).
+   permission (`activeTab`, `scripting`, `storage`, dan keempat optional
+   host permission, termasuk `https://ssl.bing.com/*` untuk fitur Cek
+   Backlink) — jelaskan singkat sesuai fungsinya masing-masing (lihat
+   README.md bagian "Izin yang dipakai" sebagai referensi).
 
-## 5. Aktifkan HTTP referrer restriction untuk KEDUA API key
+## 5. Aktifkan HTTP referrer restriction untuk API key PageSpeed Insights & Gemini
 
 Langkah ini sama persis untuk API key **PageSpeed Insights** dan API key
 **Gemini** — keduanya perlu dibatasi terpisah (masing-masing adalah key
@@ -58,6 +60,10 @@ yang berbeda, dibuat di tempat berbeda: PSI dari Google Cloud Console,
 Gemini biasanya dari Google AI Studio, tapi Application restriction
 diatur dari tempat yang sama: Google Cloud Console → Credentials, karena
 Google AI Studio membuat key di bawah proyek Google Cloud juga).
+
+**Catatan: langkah ini TIDAK berlaku untuk API key Bing Webmaster
+Tools** — lihat bagian "API key Bing Webmaster Tools tidak punya
+proteksi referrer" di bawah untuk penjelasan & mitigasinya.
 
 1. Buka [Google Cloud Console &rarr; APIs & Services &rarr; Credentials](https://console.cloud.google.com/apis/credentials).
 2. Untuk **API key PageSpeed Insights** (sudah dibatasi ke PageSpeed
@@ -92,15 +98,41 @@ dan dipakai dari script atau situs lain akan otomatis ditolak Google
    panggil lewat `curl`. Ini SEHARUSNYA gagal dengan error terkait
    referrer, membuktikan key sudah tidak bisa dipakai dari luar ekstensi.
 
+## 7. API key Bing Webmaster Tools tidak punya proteksi referrer
+
+Berbeda dari Google Cloud Console (yang punya **Application restriction
+&rarr; HTTP referrers** seperti dipakai di langkah 5), **Bing Webmaster
+Tools tidak menyediakan mekanisme pembatasan serupa** untuk API key-nya.
+Ini bukan sesuatu yang bisa diperbaiki dari sisi konfigurasi ekstensi
+atau kode — ini keterbatasan platform Bing Webmaster Tools sendiri.
+
+Implikasinya, kalau API key Bing seorang pengguna bocor (mis. lewat
+`chrome.storage.local` perangkat yang diakses pihak lain), key itu bisa
+dipakai dari mana saja, tidak dibatasi hanya dari ekstensi ini seperti
+key PSI/Gemini. Mitigasi yang tersedia hanya:
+
+- **Sebelum publish**: jelaskan keterbatasan ini apa adanya ke pengguna —
+  sudah tercermin di kartu Options (`options.html`, bagian API key Bing)
+  dan `README.md` (bagian "Cakupan v5"), jangan dihapus/dilunakkan saat
+  mengisi listing Chrome Web Store.
+- **Kalau key bocor**: satu-satunya pemulihan adalah membuat key baru
+  dari dashboard Bing Webmaster Tools (Settings &rarr; API Access) dan
+  menghapus key lama — sampaikan ini ke pengguna kalau ditanya.
+- Fitur ini tetap **sepenuhnya opsional** (sama seperti Gemini) — kalau
+  pengguna tidak mengisi API key Bing, tidak ada key yang tersimpan sama
+  sekali untuk berisiko bocor.
+
 ## Catatan tambahan
 
 - Kalau suatu saat ekstensi di-upload ulang sebagai *item baru* (bukan
   update dari item yang sama), ID-nya akan berbeda dan referrer di
-  Google Cloud Console (untuk KEDUA key) perlu diperbarui.
+  Google Cloud Console (untuk key PSI & Gemini) perlu diperbarui. API
+  key Bing tidak terpengaruh langkah ini karena memang tidak punya
+  referrer restriction untuk diperbarui (lihat Bagian 7).
 - Restriction ini independen dari status publish (Public/Unlisted/
   Private testers) — begitu ID diketahui dari langkah 3, langkah 5 bisa
   langsung dikerjakan kapan saja, tidak perlu menunggu review Google
   selesai.
-- Fitur Gemini murni opsional (lihat README.md) — kalaupun API key
-  Gemini belum/tidak pernah diisi pengguna, seluruh fitur lain ekstensi
-  tetap berfungsi normal.
+- Fitur Gemini dan Cek Backlink (Bing Webmaster Tools) murni opsional
+  (lihat README.md) — kalaupun API key-nya belum/tidak pernah diisi
+  pengguna, seluruh fitur lain ekstensi tetap berfungsi normal.

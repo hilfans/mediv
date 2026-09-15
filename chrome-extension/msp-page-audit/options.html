@@ -116,6 +116,58 @@
         Google.
       </p>
     </section>
+
+    <section class="msp-card">
+      <h2>API Key Bing Webmaster Tools (Cek Backlink, Opsional)</h2>
+      <p class="msp-desc">
+        Dipakai untuk fitur <strong>Cek Backlink</strong> — melihat jumlah
+        & daftar halaman yang menaut ke situs Anda, lewat Bing Webmaster
+        Tools API. Kalau Anda tidak mengisi key ini, semua fitur lain di
+        ekstensi tetap berfungsi normal — bagian ini murni opsional.
+      </p>
+
+      <div class="msp-warning">
+        <strong>Beda penting dari dua API key di atas:</strong> Bing
+        Webmaster Tools API HANYA mengembalikan data untuk situs yang
+        sudah Anda <strong>tambahkan &amp; verifikasi kepemilikannya</strong>
+        di akun Bing Webmaster Tools yang API key-nya dipakai — tidak bisa
+        dipakai untuk melihat backlink situs siapa pun secara bebas
+        (beda dari Cek Kecepatan yang bisa untuk URL apa saja). Kalau
+        domain yang Anda audit belum diverifikasi di akun itu, fitur ini
+        akan menampilkan pesan error, bukan bug.
+      </div>
+
+      <div class="msp-warning">
+        <strong>Penting soal keamanan:</strong> API key disimpan hanya di
+        <code>chrome.storage.local</code> perangkat ini, tidak pernah
+        dikirim ke server PT MSP. Berbeda dari API key Google, Bing
+        Webmaster Tools <strong>tidak menyediakan</strong> pembatasan HTTP
+        referrer seperti Google Cloud Console — kalau key ini bocor, satu-satunya
+        cara memulihkannya adalah membuat key baru dari dashboard Bing
+        Webmaster Tools dan menghapus yang lama.
+      </div>
+
+      <label class="msp-field">
+        API Key
+        <input type="password" id="mspBingApiKey" placeholder="Masukkan API key Bing Webmaster Tools">
+      </label>
+
+      <div class="msp-actions">
+        <button id="mspToggleBingKey" class="msp-secondary-btn" type="button">Tampilkan</button>
+        <button id="mspSaveBingKey" class="msp-primary-btn" type="button">Simpan</button>
+        <button id="mspClearBingKey" class="msp-secondary-btn" type="button">Hapus</button>
+      </div>
+
+      <p id="mspBingStatus" class="msp-status" hidden></p>
+
+      <p class="msp-hint">
+        Belum punya API key Bing Webmaster Tools? Tambahkan &amp;
+        verifikasi situs Anda dulu di
+        <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer">Bing Webmaster Tools</a>,
+        lalu buat API key lewat menu <strong>Settings &rarr; API Access</strong>
+        di dashboard-nya.
+      </p>
+    </section>
   </main>
 
   <script src="options.js"></script>
