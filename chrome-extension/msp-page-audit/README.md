@@ -363,7 +363,9 @@ Diatur lewat halaman **Options**, kartu ketiga terpisah dari API key PSI
 dan Gemini. Buat lewat
 [Bing Webmaster Tools](https://www.bing.com/webmasters) — tambahkan &
 verifikasi situs Anda dulu, lalu buat API key lewat menu
-**Settings &rarr; API Access**. Sama seperti key lain: **tidak pernah
+**Settings &rarr; API Access**, atau ikuti tata cara lengkapnya di
+[Cara Mendapatkan API Key Bing Webmaster (Backlink)](https://www.msp.web.id/2026/09/cara-mendapatkan-api-key-bing-webmaster-backlink.html)
+di blog msp.web.id. Sama seperti key lain: **tidak pernah
 ditulis di kode sumber**, disimpan hanya di `chrome.storage.local` milik
 pengguna, dan dipakai langsung dari browser ke Bing Webmaster Tools API —
 tidak lewat server PT MSP.
