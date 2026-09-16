@@ -274,8 +274,12 @@ async function runCheck() {
 
     await mspIncrementUsage();
 
+    // Mobile dan Desktop disimpan di key TERPISAH (bukan saling menimpa)
+    // supaya kalau pengguna sudah pernah tes keduanya, laporan gabungan
+    // bisa menampilkan dua-duanya -- bukan cuma yang paling baru dites.
+    var storageKey = strategy === "desktop" ? "mspLastSpeedCheckDesktop" : "mspLastSpeedCheckMobile";
     await chrome.storage.local.set({
-      mspLastSpeedCheck: { parsed: parsed, targetUrl: targetUrl, strategy: strategy, generatedAt: new Date().toISOString() }
+      [storageKey]: { parsed: parsed, targetUrl: targetUrl, strategy: strategy, generatedAt: new Date().toISOString() }
     });
 
     renderResults(parsed, targetUrl, strategy);

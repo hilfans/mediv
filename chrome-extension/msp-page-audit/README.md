@@ -79,9 +79,12 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   **"Belum dilakukan tes"** kalau belum, supaya admin langsung tahu tanpa
   perlu membuka bagian Cek Kecepatan secara terpisah.
 - **Satu PDF gabungan untuk semua fitur**: `report.html` selalu merender
-  keempat bagian yang datanya tersimpan di perangkat — Audit SEO On-Page,
-  Crawl Situs (`mspLastCrawl`), Cek Kecepatan (`mspLastSpeedCheck`), dan
-  Cek Backlink (`mspLastBacklinkCheck`) — sebagai satu laporan berurutan,
+  semua bagian yang datanya tersimpan di perangkat — Audit SEO On-Page,
+  Crawl Situs (`mspLastCrawl`), Cek Kecepatan Mobile & Desktop
+  (`mspLastSpeedCheckMobile`/`mspLastSpeedCheckDesktop` — key terpisah,
+  jadi kalau keduanya pernah dites, keduanya ditampilkan sebagai dua
+  bagian independen, bukan cuma yang terakhir dijalankan), dan Cek
+  Backlink (`mspLastBacklinkCheck`) — sebagai satu laporan berurutan,
   bukan PDF terpisah-terpisah. Klik "Unduh sebagai PDF" di halaman
   **Crawl Situs**, **Cek Kecepatan**, atau **Cek Backlink** membuka
   `report.html?autoprint=1` di tab baru, yang otomatis memicu dialog cetak
@@ -99,8 +102,13 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
   **paling baru dibuat** (`generatedAt`), lalu menyembunyikan bagian mana
   pun yang domainnya tidak cocok — bukan ikut menampilkannya tercampur
   begitu saja — dan menunjukkan catatan kuning di atas laporan yang
-  menyebutkan bagian mana yang disembunyikan dan kenapa. Lihat
-  `mspFilterByReferenceDomain()` di `report.js`.
+  menyebutkan bagian mana yang disembunyikan dan kenapa. Perbandingan
+  domainnya mengabaikan prefix `www.` (`www.msp.web.id` dan `msp.web.id`
+  dianggap situs yang sama, konsisten dengan pencocokan situs Bing
+  Webmaster Tools — lihat `mspStripWwwPrefix()` di `bing-model.js`),
+  karena banyak situs redirect satu ke yang lain dan keduanya memang
+  merujuk properti yang sama. Lihat `mspFilterByReferenceDomain()` di
+  `report.js`.
 
 Semua pengecekan di atas berjalan hanya untuk **tab yang sedang aktif**,
 dipicu saat ikon ekstensi diklik.
@@ -162,7 +170,13 @@ asli — persis seperti yang tampil di
   dan itu wajar, bukan tanda kegagalan.
 - Daftar peluang perbaikan performa terbesar (opportunities), diurutkan
   dari potensi penghematan waktu paling besar.
-- Bisa pilih strategi Mobile atau Desktop.
+- Bisa pilih strategi Mobile atau Desktop -- hasil keduanya disimpan
+  di key `chrome.storage.local` yang **terpisah**
+  (`mspLastSpeedCheckMobile`/`mspLastSpeedCheckDesktop`, bukan saling
+  menimpa), jadi kalau pengguna sudah pernah tes keduanya untuk domain
+  yang sama, laporan gabungan menampilkan **dua bagian independen**
+  ("Cek Kecepatan — Mobile" dan "— Desktop"), bukan cuma yang paling
+  baru dijalankan.
 - Diekspor ke PDF lewat laporan gabungan yang sama dengan Audit On-Page
   dan Crawl Situs (lihat bagian "Satu PDF gabungan" di atas).
 

@@ -198,8 +198,11 @@ function renderCategoryScores(categories) {
  * langsung lihat skor Performance Lighthouse tanpa scroll ke bagian
  * terpisah. Kalau belum pernah dijalankan, cukup tampilkan notifikasi
  * "Belum dilakukan tes" alih-alih bar kosong yang membingungkan.
+ * Dipanggil dua kali (Mobile & Desktop) karena keduanya independen --
+ * pengguna bisa saja sudah pernah tes salah satu, keduanya, atau belum
+ * sama sekali.
  */
-function renderSpeedCategoryRow(speedData) {
+function renderSpeedCategoryRow(label, speedData) {
   var wrap = document.getElementById("mspCategoryScores");
   var row = document.createElement("div");
   var hasScore = speedData && speedData.parsed && speedData.parsed.categories &&
@@ -209,7 +212,7 @@ function renderSpeedCategoryRow(speedData) {
     var band = scoreBand(score);
     row.className = "msp-category-score-row";
     row.innerHTML =
-      '<span class="msp-cat-name">Cek Kecepatan (Google Lighthouse)</span>' +
+      '<span class="msp-cat-name">' + escapeHtml(label) + '</span>' +
       '<span class="msp-category-score-track">' +
         '<span class="msp-category-score-fill band-' + band + '" style="width:' + score + '%"></span>' +
       "</span>" +
@@ -217,7 +220,7 @@ function renderSpeedCategoryRow(speedData) {
   } else {
     row.className = "msp-category-score-row untested";
     row.innerHTML =
-      '<span class="msp-cat-name">Cek Kecepatan (Google Lighthouse)</span>' +
+      '<span class="msp-cat-name">' + escapeHtml(label) + '</span>' +
       '<span class="msp-cat-pct msp-cat-untested">Belum dilakukan tes</span>';
   }
   wrap.appendChild(row);
@@ -584,13 +587,19 @@ function renderSpeedDescription(description) {
   }).join("");
 }
 
-function renderSpeedSection(speedData) {
-  document.getElementById("mspSpeedSection").hidden = false;
+/**
+ * idPrefix membedakan elemen Mobile vs Desktop (mis. "mspSpeedMobile"
+ * -> #mspSpeedMobileUrl, #mspSpeedMobileSection, dst.) -- dipanggil
+ * sekali per strategi yang datanya ada, supaya kalau pengguna sudah
+ * pernah tes KEDUANYA, laporan gabungan menampilkan dua bagian
+ * terpisah alih-alih cuma yang paling baru dijalankan.
+ */
+function renderSpeedSection(idPrefix, speedData) {
+  document.getElementById(idPrefix + "Section").hidden = false;
   var parsed = speedData.parsed;
 
-  document.getElementById("mspSpeedUrl").textContent = parsed.finalUrl || speedData.targetUrl;
-  document.getElementById("mspSpeedStrategy").textContent = speedData.strategy === "desktop" ? "Desktop" : "Mobile";
-  document.getElementById("mspSpeedDate").textContent = formatDate(parsed.fetchTime || speedData.generatedAt);
+  document.getElementById(idPrefix + "Url").textContent = parsed.finalUrl || speedData.targetUrl;
+  document.getElementById(idPrefix + "Date").textContent = formatDate(parsed.fetchTime || speedData.generatedAt);
 
   var catItems = [
     { label: "Performance", value: parsed.categories.performance },
@@ -598,7 +607,7 @@ function renderSpeedSection(speedData) {
     { label: "Accessibility", value: parsed.categories.accessibility },
     { label: "Best Practices", value: parsed.categories.bestPractices }
   ];
-  document.getElementById("mspSpeedCategoryScores").innerHTML = catItems.map(function (it) {
+  document.getElementById(idPrefix + "CategoryScores").innerHTML = catItems.map(function (it) {
     var band = it.value == null ? "" : scoreBand(it.value);
     return (
       '<div class="msp-speed-category-tile ' + band + '">' +
@@ -608,7 +617,7 @@ function renderSpeedSection(speedData) {
     );
   }).join("");
 
-  document.getElementById("mspSpeedLabMetrics").innerHTML = Object.keys(SPEED_METRIC_LABELS).map(function (key) {
+  document.getElementById(idPrefix + "LabMetrics").innerHTML = Object.keys(SPEED_METRIC_LABELS).map(function (key) {
     var m = parsed.labMetrics[key];
     var cls = speedRatingClass(m.rating);
     return (
@@ -619,7 +628,7 @@ function renderSpeedSection(speedData) {
     );
   }).join("");
 
-  var fieldWrap = document.getElementById("mspSpeedFieldMetricsWrap");
+  var fieldWrap = document.getElementById(idPrefix + "FieldMetricsWrap");
   if (!parsed.fieldMetrics) {
     fieldWrap.innerHTML = '<p class="msp-field-empty">Data lapangan (dari pengguna nyata, Chrome UX Report) tidak tersedia untuk URL ini -- biasanya karena traffic situs belum cukup tercatat Google. Ini normal untuk situs skala kecil-menengah dan bukan tanda ada masalah.</p>';
   } else {
@@ -638,7 +647,7 @@ function renderSpeedSection(speedData) {
     fieldWrap.innerHTML = '<div class="msp-metrics-grid">' + rows + "</div>";
   }
 
-  var oppWrap = document.getElementById("mspSpeedOpportunities");
+  var oppWrap = document.getElementById(idPrefix + "Opportunities");
   if (!parsed.opportunities.length) {
     oppWrap.innerHTML = '<p class="msp-opportunity-empty">Tidak ada peluang perbaikan performa signifikan yang terdeteksi. 🎉</p>';
   } else {
@@ -656,8 +665,16 @@ function renderSpeedSection(speedData) {
   }
 }
 
+/**
+ * "www." dilepas sebelum dibandingkan -- www.msp.web.id dan msp.web.id
+ * dianggap situs yang sama (banyak situs redirect satu ke yang lain),
+ * sama seperti mspStripWwwPrefix() di bing-model.js yang dipakai untuk
+ * pencocokan situs Bing Webmaster Tools. Dipakai di sini juga supaya
+ * hasil Cek Backlink untuk "msp.web.id" tidak dianggap domain berbeda
+ * dari audit yang dijalankan di "www.msp.web.id", atau sebaliknya.
+ */
 function mspHostnameOf(urlStr) {
-  try { return new URL(urlStr).hostname; } catch (e) { return null; }
+  try { return mspStripWwwPrefix(new URL(urlStr).hostname); } catch (e) { return null; }
 }
 
 /* ---------- Bagian Cek Backlink / Bing Webmaster Tools (dalam laporan gabungan) ---------- */
@@ -711,15 +728,16 @@ function renderBacklinkSection(backlinkData) {
  * dibuka ini (datanya tetap ada di storage apa adanya, cuma tidak
  * dirender di sini).
  */
-function mspFilterByReferenceDomain(auditModel, crawlData, speedData, backlinkData) {
+function mspFilterByReferenceDomain(auditModel, crawlData, speedDataMobile, speedDataDesktop, backlinkData) {
   var entries = [];
   if (auditModel) { entries.push({ generatedAt: auditModel.generatedAt, hostname: mspHostnameOf(auditModel.url) }); }
   if (crawlData && crawlData.result) { entries.push({ generatedAt: crawlData.generatedAt, hostname: mspHostnameOf(crawlData.result.origin) }); }
-  if (speedData && speedData.parsed) { entries.push({ generatedAt: speedData.generatedAt, hostname: mspHostnameOf(speedData.targetUrl) }); }
+  if (speedDataMobile && speedDataMobile.parsed) { entries.push({ generatedAt: speedDataMobile.generatedAt, hostname: mspHostnameOf(speedDataMobile.targetUrl) }); }
+  if (speedDataDesktop && speedDataDesktop.parsed) { entries.push({ generatedAt: speedDataDesktop.generatedAt, hostname: mspHostnameOf(speedDataDesktop.targetUrl) }); }
   if (backlinkData && backlinkData.summary) { entries.push({ generatedAt: backlinkData.generatedAt, hostname: mspHostnameOf(backlinkData.targetUrl) }); }
 
   if (entries.length < 2) {
-    return { auditModel: auditModel, crawlData: crawlData, speedData: speedData, backlinkData: backlinkData, excluded: [] };
+    return { auditModel: auditModel, crawlData: crawlData, speedDataMobile: speedDataMobile, speedDataDesktop: speedDataDesktop, backlinkData: backlinkData, excluded: [] };
   }
 
   entries.sort(function (a, b) { return (b.generatedAt || "").localeCompare(a.generatedAt || ""); });
@@ -728,7 +746,8 @@ function mspFilterByReferenceDomain(auditModel, crawlData, speedData, backlinkDa
   var excluded = [];
   var outAudit = auditModel;
   var outCrawl = crawlData;
-  var outSpeed = speedData;
+  var outSpeedMobile = speedDataMobile;
+  var outSpeedDesktop = speedDataDesktop;
   var outBacklink = backlinkData;
 
   if (outAudit && mspHostnameOf(outAudit.url) !== referenceHostname) {
@@ -739,29 +758,34 @@ function mspFilterByReferenceDomain(auditModel, crawlData, speedData, backlinkDa
     excluded.push({ label: "Crawl Situs", hostname: mspHostnameOf(outCrawl.result.origin) });
     outCrawl = null;
   }
-  if (outSpeed && outSpeed.parsed && mspHostnameOf(outSpeed.targetUrl) !== referenceHostname) {
-    excluded.push({ label: "Cek Kecepatan", hostname: mspHostnameOf(outSpeed.targetUrl) });
-    outSpeed = null;
+  if (outSpeedMobile && mspHostnameOf(outSpeedMobile.targetUrl) !== referenceHostname) {
+    excluded.push({ label: "Cek Kecepatan (Mobile)", hostname: mspHostnameOf(outSpeedMobile.targetUrl) });
+    outSpeedMobile = null;
+  }
+  if (outSpeedDesktop && mspHostnameOf(outSpeedDesktop.targetUrl) !== referenceHostname) {
+    excluded.push({ label: "Cek Kecepatan (Desktop)", hostname: mspHostnameOf(outSpeedDesktop.targetUrl) });
+    outSpeedDesktop = null;
   }
   if (outBacklink && outBacklink.summary && mspHostnameOf(outBacklink.targetUrl) !== referenceHostname) {
     excluded.push({ label: "Cek Backlink", hostname: mspHostnameOf(outBacklink.targetUrl) });
     outBacklink = null;
   }
 
-  return { auditModel: outAudit, crawlData: outCrawl, speedData: outSpeed, backlinkData: outBacklink, excluded: excluded, referenceHostname: referenceHostname };
+  return { auditModel: outAudit, crawlData: outCrawl, speedDataMobile: outSpeedMobile, speedDataDesktop: outSpeedDesktop, backlinkData: outBacklink, excluded: excluded, referenceHostname: referenceHostname };
 }
 
 async function init() {
   var autoprint = new URLSearchParams(window.location.search).get("autoprint") === "1";
 
-  var data = await chrome.storage.local.get(["mspLastAudit", "mspLastCrawl", "mspLastSpeedCheck", "mspLastBacklinkCheck"]);
-  var filtered = mspFilterByReferenceDomain(data.mspLastAudit, data.mspLastCrawl, data.mspLastSpeedCheck, data.mspLastBacklinkCheck);
+  var data = await chrome.storage.local.get(["mspLastAudit", "mspLastCrawl", "mspLastSpeedCheckMobile", "mspLastSpeedCheckDesktop", "mspLastBacklinkCheck"]);
+  var filtered = mspFilterByReferenceDomain(data.mspLastAudit, data.mspLastCrawl, data.mspLastSpeedCheckMobile, data.mspLastSpeedCheckDesktop, data.mspLastBacklinkCheck);
   var auditModel = filtered.auditModel;
   var crawlData = filtered.crawlData;
-  var speedData = filtered.speedData;
+  var speedDataMobile = filtered.speedDataMobile;
+  var speedDataDesktop = filtered.speedDataDesktop;
   var backlinkData = filtered.backlinkData;
 
-  if (!auditModel && !crawlData && !speedData && !backlinkData) {
+  if (!auditModel && !crawlData && !speedDataMobile && !speedDataDesktop && !backlinkData) {
     document.getElementById("mspEmptyState").hidden = false;
     return;
   }
@@ -785,7 +809,8 @@ async function init() {
     document.getElementById("mspReportDate").textContent = formatDate(auditModel.generatedAt);
     renderScoreRing(auditModel.overall.score);
     renderCategoryScores(auditModel.categories);
-    renderSpeedCategoryRow(speedData);
+    renderSpeedCategoryRow("Cek Kecepatan Mobile (Google Lighthouse)", speedDataMobile);
+    renderSpeedCategoryRow("Cek Kecepatan Desktop (Google Lighthouse)", speedDataDesktop);
     renderStatTiles(auditModel.overall.counts);
     renderDetailSections(auditModel.categories);
     try { hostname = new URL(auditModel.url).hostname; } catch (e) { /* biarkan default */ }
@@ -807,7 +832,10 @@ async function init() {
   }
 
   document.getElementById("mspGeminiSummaryBtn").addEventListener("click", function () {
-    handleExecSummary(auditModel, crawlData, speedData);
+    // Ringkasan AI cuma butuh satu gambaran kecepatan, bukan dua --
+    // Mobile diutamakan (sinyal utama mobile-first indexing Google),
+    // Desktop dipakai kalau Mobile belum pernah dites.
+    handleExecSummary(auditModel, crawlData, speedDataMobile || speedDataDesktop);
   });
 
   if (crawlData && crawlData.result) {
@@ -817,10 +845,17 @@ async function init() {
     }
   }
 
-  if (speedData && speedData.parsed) {
-    renderSpeedSection(speedData);
+  if (speedDataMobile && speedDataMobile.parsed) {
+    renderSpeedSection("mspSpeedMobile", speedDataMobile);
     if (hostname === "halaman") {
-      try { hostname = new URL(speedData.targetUrl).hostname; } catch (e) { /* biarkan default */ }
+      try { hostname = new URL(speedDataMobile.targetUrl).hostname; } catch (e) { /* biarkan default */ }
+    }
+  }
+
+  if (speedDataDesktop && speedDataDesktop.parsed) {
+    renderSpeedSection("mspSpeedDesktop", speedDataDesktop);
+    if (hostname === "halaman") {
+      try { hostname = new URL(speedDataDesktop.targetUrl).hostname; } catch (e) { /* biarkan default */ }
     }
   }
 
@@ -834,7 +869,8 @@ async function init() {
   var generatedTimestamps = [
     auditModel && auditModel.generatedAt,
     crawlData && crawlData.generatedAt,
-    speedData && speedData.generatedAt,
+    speedDataMobile && speedDataMobile.generatedAt,
+    speedDataDesktop && speedDataDesktop.generatedAt,
     backlinkData && backlinkData.generatedAt
   ].filter(Boolean).sort();
   document.getElementById("mspReportGeneratedDate").textContent =
