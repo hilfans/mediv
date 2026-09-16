@@ -73,6 +73,20 @@
    Bing Webmaster (kemungkinan termasuk endpoint `.svc/json/` yang
    dipakai di sini) dijadwalkan pensiun 31 Agustus 2026.
 
+   BUKTI TAMBAHAN (HAR capture DevTools dari permintaan SUNGGUHAN yang
+   dikirim ekstensi ini, bukan pengujian manual): request
+   `GetLinkCounts?siteUrl=https%3A%2F%2Fmanmuti.telkomuniversity.ac.id%2F&apikey=...`
+   dari `runCheck()` di `backlink.js` persis memakai string situs hasil
+   `GetUserSites` (dikonfirmasi cocok persis), dikirim dengan
+   `sec-fetch-mode: cors` tanpa error apa pun (CORS terbukti bekerja
+   normal lewat host permission yang di-grant), dan respons header
+   menyertakan `x-cache: CONFIG_NOCACHE` -- membuktikan `Links: []`
+   yang diterima BUKAN respons cache basi, melainkan jawaban langsung
+   dari server Bing saat itu juga. Ini menutup kemungkinan terakhir
+   bahwa masalahnya ada di kode ekstensi (request salah bentuk, CORS
+   gagal diam-diam, atau cache lama) -- confirmed 100% masalah di sisi
+   API Bing sendiri.
+
    IMPLIKASI: fitur Cek Backlink saat ini **tidak bisa diandalkan**
    untuk memastikan situs benar-benar tanpa backlink -- hasil "0" bisa
    berarti situsnya memang belum punya backlink terindeks Bing, ATAU
