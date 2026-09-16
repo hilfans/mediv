@@ -309,9 +309,24 @@ sudah ditambahkan & diverifikasi kepemilikannya** di akun Bing Webmaster
 Tools yang API key-nya dipakai — beda fundamental dari Cek Kecepatan
 (PSI) yang bisa dipakai untuk URL siapa pun secara bebas. Kalau domain
 yang diaudit belum diverifikasi di akun itu, fitur ini menampilkan pesan
-error yang menjelaskan hal ini, bukan data kosong atau bug. Ini bukan
-"cek backlink kompetitor secara bebas" seperti Ahrefs/SEMrush — cuma
-untuk situs yang memang dikelola sendiri oleh pemilik API key.
+error yang menjelaskan hal ini beserta daftar situs yang sebenarnya
+terdaftar, bukan data kosong atau bug. Ini bukan "cek backlink kompetitor
+secara bebas" seperti Ahrefs/SEMrush — cuma untuk situs yang memang
+dikelola sendiri oleh pemilik API key.
+
+Pengguna **tidak perlu mengetik URL persis sama** seperti yang terdaftar
+di akun Bing Webmaster Tools (dengan/tanpa `www`, dengan/tanpa garis
+miring di akhir, `http` vs `https`) — `backlink.js` memanggil
+`GetUserSites` dulu untuk mendapat daftar situs sungguhan di akun
+tersebut, mencocokkan berdasar **hostname** (case-insensitive) terhadap
+input pengguna lewat `mspFindRegisteredBingSite()` di `bing-model.js`,
+lalu memakai string URL ASLI dari hasil pencocokan itu (bukan tebakan
+normalisasi sendiri) untuk panggilan `GetLinkCounts`/`GetUrlLinks`
+berikutnya. Ini menutup celah nyata yang ditemukan lewat pengujian
+pengguna: **Bing Webmaster API tidak melempar error untuk `siteUrl` yang
+tidak cocok persis — diam-diam mengembalikan hasil kosong**, yang tanpa
+pencocokan proaktif ini akan terlihat identik dengan "situs memang belum
+punya backlink" padahal sebenarnya cuma salah ketik/format URL.
 
 ### Ketidakpastian teknis — status setelah pengujian nyata pertama
 

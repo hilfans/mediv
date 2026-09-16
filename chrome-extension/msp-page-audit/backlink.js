@@ -3,6 +3,12 @@
 var STORAGE_KEY = "mspBingApiKey";
 var HOST_PERMISSION = { origins: ["https://ssl.bing.com/*"] };
 
+// Diisi runCheck() setelah situs berhasil dicocokkan lewat GetUserSites --
+// dipakai handleDetailClick() supaya memakai string URL PERSIS yang
+// terdaftar di akun (bukan re-parse dari input field), konsisten dengan
+// yang dipakai memanggil GetLinkCounts.
+var lastResolvedSiteUrl = null;
+
 function escapeHtml(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;")
@@ -111,7 +117,7 @@ async function handleDetailClick(e) {
   }
 
   var pageUrl = btn.closest("tr").querySelector(".msp-url-cell a").href;
-  var siteUrl = document.getElementById("mspTargetUrl").value.trim();
+  var siteUrl = lastResolvedSiteUrl || document.getElementById("mspTargetUrl").value.trim();
   var apiKey = await getApiKey();
 
   row.hidden = false;
@@ -179,18 +185,49 @@ async function runCheck() {
   document.getElementById("mspLoading").hidden = false;
 
   try {
-    var url = mspBuildBingLinkCountsUrl(targetUrl, apiKey);
+    // Bing Webmaster API mensyaratkan siteUrl cocok PERSIS (skema +
+    // trailing slash) dengan situs yang terdaftar di akun, dan diam-diam
+    // mengembalikan hasil kosong (bukan error) kalau tidak cocok --
+    // ketahuan lewat pengujian nyata pengguna (situs terverifikasi tetap
+    // menampilkan 0). Jadi dicocokkan dulu lewat GetUserSites sebelum
+    // memanggil GetLinkCounts, supaya string yang dipakai dijamin persis
+    // dan supaya situs yang salah ketik/tidak terdaftar dapat pesan error
+    // yang jelas alih-alih "0 backlink" yang menyesatkan.
+    var sitesUrl = mspBuildBingUserSitesUrl(apiKey);
+    var sitesResp = await fetch(sitesUrl);
+    var sitesData = await sitesResp.json().catch(function () { return null; });
+    var sites = mspParseBingUserSitesResponse(sitesData, sitesResp.status);
+
+    var matched = mspFindRegisteredBingSite(targetUrl, sites);
+    if (!matched) {
+      var registeredList = sites.length
+        ? sites.map(function (s) { return s.url; }).join(", ")
+        : "(tidak ada situs terdaftar di akun ini)";
+      throw new Error(
+        "Situs \"" + targetUrl + "\" tidak ditemukan di antara situs yang " +
+        "terdaftar & terverifikasi di akun Bing Webmaster Tools Anda. " +
+        "Situs yang terdaftar: " + registeredList + ". Tambahkan & " +
+        "verifikasi situs ini dulu di https://www.bing.com/webmasters " +
+        "kalau belum ada di daftar."
+      );
+    }
+    var resolvedSiteUrl = matched.url;
+
+    var url = mspBuildBingLinkCountsUrl(resolvedSiteUrl, apiKey);
     var resp = await fetch(url);
     var data = await resp.json().catch(function () { return null; });
     var items = mspParseBingLinkCountsResponse(data, resp.status);
     var summary = mspSummarizeBingLinkCounts(items);
     var generatedAt = new Date().toISOString();
 
+    lastResolvedSiteUrl = resolvedSiteUrl;
+    targetInput.value = resolvedSiteUrl;
+
     await chrome.storage.local.set({
-      mspLastBacklinkCheck: { targetUrl: targetUrl, generatedAt: generatedAt, summary: summary }
+      mspLastBacklinkCheck: { targetUrl: resolvedSiteUrl, generatedAt: generatedAt, summary: summary }
     });
 
-    renderResults(summary, targetUrl, generatedAt);
+    renderResults(summary, resolvedSiteUrl, generatedAt);
   } catch (err) {
     showError(describeNetworkError(err));
   }

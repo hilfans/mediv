@@ -18,6 +18,36 @@
    bentuk lain (siapa tahu endpoint GetUrlLinks beda) supaya tetap
    defensif.
 
+   TEMUAN KEDUA (bug lanjutan setelah temuan di atas): situs yang sudah
+   diverifikasi TETAP menampilkan 0 backlink kalau string `siteUrl` yang
+   dikirim tidak PERSIS sama dengan yang terdaftar di akun Bing Webmaster
+   Tools -- API ini tidak fuzzy-match domain, dan yang lebih menjebak:
+   kalau tidak cocok, API TIDAK melempar error, cuma diam-diam
+   mengembalikan Links: [] seolah situsnya memang tidak punya backlink.
+   Respons GetUserSites asli (dari akun pengguna, contoh URL yang
+   diverifikasi):
+     {"d":[{"__type":"Site:#...","Url":"https://msp.web.id/","IsVerified":true}, ...]}
+   Polanya SELALU <skema>://<host>/ dengan trailing slash, tanpa
+   kecuali, di antara 17 situs pada akun tersebut. Perhatikan juga:
+   GetUserSites membungkus array-nya LANGSUNG di "d" (bukan "d.Links"
+   seperti GetLinkCounts) -- API ini TIDAK konsisten bentuk pembungkusnya
+   antar endpoint, jadi mspUnwrapBingPayload() sengaja mengecek kedua
+   kemungkinan itu.
+
+   Solusinya BUKAN menormalisasi tebakan sendiri (nambah trailing slash,
+   dst.) karena itu tidak menyelesaikan kasus host yang salah sama
+   sekali (mis. mengetik "www.msp.web.id" padahal yang terdaftar cuma
+   "msp.web.id" tanpa www -- kasus nyata yang juga terjadi). Sebagai
+   gantinya, mspFindRegisteredBingSite() di bawah memanggil GetUserSites
+   dulu, mencocokkan berdasar HOSTNAME (case-insensitive, mengabaikan
+   skema/trailing-slash) terhadap input pengguna, lalu memakai STRING
+   ASLI dari GetUserSites (bukan hasil normalisasi tebakan) untuk
+   panggilan GetLinkCounts/GetUrlLinks berikutnya -- dijamin cocok
+   persis karena memang berasal dari sumbernya. Kalau tidak ada yang
+   cocok, pemanggil (backlink.js) menampilkan pesan eksplisit "situs ini
+   tidak terdaftar di akun Anda" berikut daftar situs yang benar terdaftar
+   -- bukan diam-diam menunjukkan 0 yang menyesatkan seperti sebelumnya.
+
    MASIH BELUM TERVERIFIKASI (contoh nyata di atas kebetulan Links: [],
    situsnya belum punya backlink terindeks Bing -- jadi bentuk tiap ITEM
    di dalam "Links" saat benar-benar berisi data belum pernah dilihat):
@@ -62,6 +92,12 @@ function mspBuildBingUrlLinksUrl(siteUrl, pageUrl, apiKey) {
   params.set("page", pageUrl);
   params.set("apikey", apiKey);
   return MSP_BING_ENDPOINT + "/GetUrlLinks?" + params.toString();
+}
+
+function mspBuildBingUserSitesUrl(apiKey) {
+  var params = new URLSearchParams();
+  params.set("apikey", apiKey);
+  return MSP_BING_ENDPOINT + "/GetUserSites?" + params.toString();
 }
 
 /**
@@ -127,6 +163,43 @@ function mspParseBingUrlLinksResponse(raw, status) {
   return list.map(function (item) {
     return item.Url || item.url || "";
   }).filter(Boolean);
+}
+
+function mspParseBingUserSitesResponse(raw, status) {
+  mspCheckBingApiError(raw, status);
+  var list = mspUnwrapBingPayload(raw);
+  if (!list) {
+    throw new Error("Format respons Bing Webmaster Tools (daftar situs) tidak sesuai dugaan -- lihat catatan di bing-model.js.");
+  }
+  return list.map(function (item) {
+    return {
+      url: item.Url || item.url || "",
+      isVerified: !!(item.IsVerified || item.isVerified)
+    };
+  }).filter(function (item) { return item.url; });
+}
+
+/**
+ * Bing Webmaster API mensyaratkan `siteUrl` cocok PERSIS (skema +
+ * trailing slash) dengan salah satu situs terdaftar di akun -- kalau
+ * tidak, diam-diam mengembalikan hasil kosong tanpa error (lihat catatan
+ * di atas file). Daripada menebak-nebak normalisasi (trailing slash,
+ * http vs https, www vs non-www), fungsi ini mencocokkan input pengguna
+ * terhadap daftar situs SUNGGUHAN dari GetUserSites berdasarkan hostname
+ * (case-insensitive, mengabaikan skema/trailing-slash pada input), lalu
+ * mengembalikan entri aslinya -- string URL yang dipakai untuk panggilan
+ * berikutnya jadi dijamin cocok karena memang berasal dari sumbernya,
+ * bukan hasil tebakan.
+ */
+function mspFindRegisteredBingSite(targetUrl, sites) {
+  var targetHostname;
+  try { targetHostname = new URL(targetUrl).hostname.toLowerCase(); } catch (e) { return null; }
+  for (var i = 0; i < sites.length; i++) {
+    var siteHostname;
+    try { siteHostname = new URL(sites[i].url).hostname.toLowerCase(); } catch (e) { continue; }
+    if (siteHostname === targetHostname) { return sites[i]; }
+  }
+  return null;
 }
 
 /**
