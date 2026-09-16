@@ -57,6 +57,21 @@
         saja yang sebenarnya terdaftar.
       </div>
 
+      <div class="msp-ownership-note">
+        <strong>Keterbatasan API yang diketahui (bukan bug ekstensi ini):</strong>
+        endpoint <code>GetLinkCounts</code>/<code>GetUrlLinks</code> yang
+        dipakai fitur ini kadang mengembalikan hasil <strong>kosong (0
+        backlink)</strong> meski situs Anda benar-benar punya backlink
+        yang terlihat di dashboard Bing Webmaster Tools sendiri (menu
+        <strong>Backlinks</strong>). Ini masalah yang juga dilaporkan
+        pengguna lain di forum resmi Microsoft Q&amp;A untuk situs yang
+        sudah terverifikasi, belum ada penjelasan/perbaikan resmi dari
+        Microsoft per catatan terakhir. Kalau hasil di sini menunjukkan
+        0 padahal dashboard Bing Anda menunjukkan angka lain, kemungkinan
+        besar itu keterbatasan API-nya, bukan berarti situs Anda memang
+        tidak punya backlink.
+      </div>
+
       <label class="msp-field">
         URL situs (origin, bukan halaman spesifik)
         <input type="url" id="mspTargetUrl" placeholder="https://www.msp.web.id">
@@ -102,7 +117,7 @@
             <tbody></tbody>
           </table>
         </div>
-        <p id="mspBacklinkEmpty" class="msp-empty-note" hidden>Tidak ada halaman dengan backlink ditemukan.</p>
+        <p id="mspBacklinkEmpty" class="msp-empty-note" hidden>Tidak ada halaman dengan backlink ditemukan lewat API ini. <strong>Sebelum menyimpulkan situs ini memang tanpa backlink, cek dulu menu "Backlinks" di dashboard Bing Webmaster Tools Anda</strong> — endpoint API yang dipakai fitur ini diketahui kadang mengembalikan hasil kosong meski dashboard menunjukkan data (lihat catatan di atas formulir).</p>
       </section>
 
       <button id="mspNewCheck" class="msp-secondary-btn msp-no-print">Cek Situs Lain</button>

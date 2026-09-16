@@ -49,19 +49,50 @@
    di akun Anda" berikut daftar situs yang benar terdaftar -- bukan
    diam-diam menunjukkan 0 yang menyesatkan seperti sebelumnya.
 
-   MASIH BELUM TERVERIFIKASI (contoh nyata di atas kebetulan Links: [],
-   situsnya belum punya backlink terindeks Bing -- jadi bentuk tiap ITEM
-   di dalam "Links" saat benar-benar berisi data belum pernah dilihat):
+   TEMUAN KETIGA -- MASALAH TERKONFIRMASI DI SISI BING, BUKAN BUG KODE
+   INI: setelah temuan kedua di atas diperbaiki (siteUrl sudah dijamin
+   cocok persis lewat GetUserSites), pengguna menguji dua situs
+   terverifikasi berbeda yang KEDUANYA punya backlink nyata dan terlihat
+   di dashboard Bing Webmaster Tools ("Backlinks" -> "Backlinks For Your
+   Site"), tapi GetLinkCounts tetap mengembalikan `Links: [], TotalPages:
+   0` untuk keduanya -- termasuk saat dipanggil LANGSUNG lewat browser
+   (bukan lewat ekstensi ini), jadi bukan masalah CORS/fetch/parsing.
+   Pencarian web mengonfirmasi ini BUKAN kasus terisolasi: thread
+   Microsoft Q&A "Bing Webmaster Tools API GetLinkCounts and GetUrlLinks
+   return empty results for verified site"
+   (https://learn.microsoft.com/en-us/answers/questions/5939109/bing-webmaster-tools-api-getlinkcounts-and-geturll)
+   melaporkan gejala PERSIS SAMA (situs terverifikasi, konfirmasi lewat
+   GetUserSites, tapi GetLinkCounts & GetUrlLinks mengembalikan HTTP 200
+   dengan Links/Details kosong) -- pertanyaan yang belum terjawab di
+   thread itu termasuk apakah endpoint ini butuh autentikasi OAuth
+   Bearer (bukan API key) untuk mengembalikan data, dan apakah endpoint
+   ini memang bersumber dari data yang sama dengan UI dashboard Bing.
+   Jawaban resmi Microsoft di thread itu menyarankan membuka support
+   request ke tim Bing Webmaster untuk konfirmasi, bukan menyebutkan
+   solusi pasti. Pencarian lain juga menyebutkan legacy SOAP/POX API
+   Bing Webmaster (kemungkinan termasuk endpoint `.svc/json/` yang
+   dipakai di sini) dijadwalkan pensiun 31 Agustus 2026.
+
+   IMPLIKASI: fitur Cek Backlink saat ini **tidak bisa diandalkan**
+   untuk memastikan situs benar-benar tanpa backlink -- hasil "0" bisa
+   berarti situsnya memang belum punya backlink terindeks Bing, ATAU
+   bisa berarti keterbatasan/bug endpoint ini yang belum diperbaiki
+   Microsoft. UI (backlink.html/report.html) sudah diberi catatan
+   eksplisit soal ini supaya pengguna tidak salah menyimpulkan. Kalau
+   Microsoft memperbaiki/mengklarifikasi ini di masa depan (mis. lewat
+   support request atau update dokumentasi resmi), catatan ini dan
+   pesan UI terkait perlu ditinjau ulang.
+
+   MASIH BELUM TERVERIFIKASI (menunggu kasus nyata dengan Links berisi
+   data -- kedua situs yang diuji sejauh ini selalu kembali kosong
+   karena masalah di atas, jadi bentuk tiap ITEM di dalam "Links" saat
+   benar-benar berisi data belum pernah dilihat):
    - Nama field per-item untuk GetLinkCounts (dugaan sekarang: "Url" +
      "LinkCount") dan untuk GetUrlLinks (dugaan sekarang: "Url").
    - Field "TotalPages" mengindikasikan respons ini KEMUNGKINAN
      dipaginasi untuk situs dengan banyak halaman bertaut -- kode di sini
      BELUM mengimplementasikan pengambilan halaman berikutnya (parameter
-     paging API ini juga belum diketahui namanya), jadi untuk situs
-     dengan backlink dalam jumlah besar, angka yang ditampilkan mungkin
-     cuma mencakup halaman pertama. Kalau pengguna melihat angka yang
-     terasa terlalu kecil dibanding dashboard Bing Webmaster Tools
-     langsung, ini kemungkinan penyebabnya -- bukan bug pembacaan data.
+     paging API ini juga belum diketahui namanya).
 
    Kalau field per-item ternyata beda casing/struktur dari dugaan di
    sini, cukup sesuaikan mspParseBingLinkCountsResponse() --  bagian

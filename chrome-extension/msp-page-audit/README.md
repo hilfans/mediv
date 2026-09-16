@@ -318,6 +318,16 @@ di bawah.
 
 ### Keterbatasan cakupan (WAJIB dibaca sebelum pakai)
 
+> **Peringatan paling penting:** API yang dipakai fitur ini
+> (`GetLinkCounts`/`GetUrlLinks`) terkonfirmasi **sering mengembalikan
+> hasil kosong (0 backlink) meski situsnya benar-benar punya backlink**
+> — ini masalah di sisi Bing sendiri (dikonfirmasi lewat pengujian
+> nyata & laporan pengguna lain di Microsoft Q&A), bukan bug ekstensi
+> ini. Jangan simpulkan sebuah situs "tidak punya backlink" hanya dari
+> hasil 0 di sini — selalu cek dashboard Bing Webmaster Tools langsung
+> dulu. Detail lengkap & sumbernya ada di bagian "Ketidakpastian
+> teknis" di bawah.
+
 **Bing Webmaster Tools API HANYA mengembalikan data untuk situs yang
 sudah ditambahkan & diverifikasi kepemilikannya** di akun Bing Webmaster
 Tools yang API key-nya dipakai — beda fundamental dari Cek Kecepatan
@@ -342,49 +352,59 @@ tidak cocok persis — diam-diam mengembalikan hasil kosong**, yang tanpa
 pencocokan proaktif ini akan terlihat identik dengan "situs memang belum
 punya backlink" padahal sebenarnya cuma salah ketik/format URL.
 
-### Ketidakpastian teknis — status setelah pengujian nyata pertama
+### Ketidakpastian teknis — status setelah pengujian nyata
 
 Saat fitur ini pertama dibangun, domain `ssl.bing.com` diblokir oleh
-kebijakan jaringan lingkungan pengembangan (`curl` ke domain itu gagal
-dengan `403 CONNECT` di level gateway), jadi dua hal berikut tidak bisa
-diverifikasi langsung. Setelah pengujian nyata seorang pengguna, satu
-di antaranya sudah terkonfirmasi:
+kebijakan jaringan lingkungan pengembangan, jadi beberapa hal tidak
+bisa diverifikasi langsung. Setelah serangkaian pengujian nyata oleh
+pengguna, statusnya sekarang:
 
-1. **Skema respons JSON API ini — SUDAH TERKONFIRMASI sebagian.**
-   Respons asli `GetLinkCounts` untuk situs tanpa backlink:
+1. **Skema respons JSON API ini — TERKONFIRMASI.** Respons asli
+   `GetLinkCounts`:
    ```json
    {"d":{"__type":"LinkCounts:#Microsoft.Bing.Webmaster.Api","Links":[],"TotalPages":0}}
    ```
-   Bukan `{"d": [...]}` (array langsung) seperti dugaan awal dari
-   dokumentasi publik, tapi `{"d": {Links: [...], TotalPages: N,
-   __type: "..."}}` — array-nya satu tingkat lebih dalam di properti
-   `Links`. `mspUnwrapBingPayload()` di `bing-model.js` sudah diperbaiki
-   sesuai temuan ini. Yang **masih belum terverifikasi**: nama field per
-   item di dalam `Links` saat benar-benar berisi data (contoh nyata di
-   atas kebetulan array-nya kosong), dan makna `TotalPages` — kalau ini
-   memang paginasi seperti dugaan, situs dengan banyak halaman bertaut
-   bisa jadi cuma menampilkan halaman pertama karena paginasi belum
-   diimplementasikan (parameter paging-nya juga belum diketahui).
-2. **Dukungan CORS API ini** — **masih belum terverifikasi.** Pengujian
-   nyata di atas dilakukan lewat navigasi langsung ke URL API-nya di tab
-   baru, bukan `fetch()` dari origin `chrome-extension://`, jadi belum
-   membuktikan apa pun soal CORS. Sebagai jaring pengaman, `backlink.js`
-   secara eksplisit meminta **optional host permission**
-   `https://ssl.bing.com/*` lewat `chrome.permissions.request()` sebelum
-   panggilan API pertama — host permission yang benar-benar di-grant
-   membuat Chrome **melewati** pembatasan CORS untuk origin itu, apa pun
-   header CORS yang dikirim API-nya. Kalau ternyata caranya tetap gagal
-   (`fetch()` melempar `TypeError: Failed to fetch`), `backlink.js`
-   menampilkan pesan error yang menyebutkan kemungkinan ini secara
-   eksplisit (lihat `describeNetworkError()`), termasuk bahwa
-   perbaikannya butuh penyesuaian arsitektur (server perantara) — bukan
-   sesuatu yang bisa diperbaiki dari sisi ekstensi murni client-side.
+   Array-nya ada di `d.Links`, bukan `d` langsung. `mspUnwrapBingPayload()`
+   di `bing-model.js` sudah sesuai temuan ini.
+2. **Dukungan CORS API ini — TERKONFIRMASI bekerja.** Panggilan
+   `fetch()` dari origin `chrome-extension://` (lewat `backlink.js`,
+   dengan optional host permission `https://ssl.bing.com/*` yang
+   diminta sebelum panggilan pertama) berhasil mengembalikan respons —
+   bukan gagal dengan CORS error.
+3. **MASALAH BARU YANG LEBIH SERIUS — TERKONFIRMASI, DI SISI BING,
+   BUKAN BUG EKSTENSI INI:** `GetLinkCounts`/`GetUrlLinks` secara
+   konsisten mengembalikan `Links: [], TotalPages: 0` untuk situs
+   terverifikasi yang **benar-benar punya backlink nyata** (dikonfirmasi
+   langsung di dashboard Bing Webmaster Tools pengguna, menu
+   "Backlinks"), bahkan saat dipanggil langsung dari browser (bukan
+   lewat ekstensi, jadi bukan soal parsing/CORS). Pencarian web
+   mengonfirmasi ini **bukan kasus terisolasi** — dilaporkan pengguna
+   lain dengan gejala persis sama di forum resmi Microsoft:
+   [Bing Webmaster Tools API GetLinkCounts and GetUrlLinks return empty results for verified site](https://learn.microsoft.com/en-us/answers/questions/5939109/bing-webmaster-tools-api-getlinkcounts-and-geturll) (Microsoft Q&A).
+   Pertanyaan yang belum terjawab di thread itu termasuk apakah endpoint
+   ini butuh autentikasi OAuth (bukan API key) untuk mengembalikan
+   data. Legacy SOAP/POX API Bing Webmaster (kemungkinan termasuk
+   endpoint `.svc/json/` yang dipakai fitur ini) juga dijadwalkan
+   pensiun per 31 Agustus 2026.
 
-**Kalau Anda menguji fitur ini lagi dengan situs yang sudah punya
-backlink sungguhan** (bukan 0 seperti pengujian pertama), laporkan
-bentuk data yang tampil (khususnya apakah jumlah/URL-nya masuk akal)
-supaya ketidakpastian nomor 1 yang tersisa (nama field per-item &
-paginasi) bisa diperbaiki berdasarkan data nyata juga.
+   **Implikasi:** fitur Cek Backlink saat ini **tidak bisa diandalkan**
+   untuk memastikan situs benar-benar tanpa backlink — hasil "0" bisa
+   berarti situsnya memang belum terindeks, ATAU keterbatasan/bug
+   endpoint ini yang belum diperbaiki Microsoft. `backlink.html` dan
+   `report.html` sudah diberi catatan eksplisit soal ini di dekat
+   formulir & di pesan "tidak ada backlink ditemukan", mengarahkan
+   pengguna untuk mengecek dashboard Bing Webmaster Tools langsung
+   sebelum menyimpulkan situsnya tanpa backlink. Kalau Anda ingin data
+   backlink yang bisa diandalkan segera, opsi yang tersedia:
+   - Buka support request ke tim Bing Webmaster Tools (disarankan resmi
+     oleh Microsoft di thread Q&A di atas) untuk konfirmasi/perbaikan.
+   - Pakai dashboard Bing Webmaster Tools langsung (menu Backlinks)
+     sebagai sumber data sementara, di luar ekstensi ini.
+
+   Field per-item di dalam `Links` saat benar-benar berisi data (nama
+   field pastinya) dan makna `TotalPages` (kemungkinan paginasi, belum
+   diimplementasikan) masih belum bisa diverifikasi karena setiap
+   pengujian sejauh ini selalu kembali kosong akibat masalah di atas.
 
 ### API Key Bing Webmaster Tools (opsional, terpisah dari key PSI & Gemini)
 
