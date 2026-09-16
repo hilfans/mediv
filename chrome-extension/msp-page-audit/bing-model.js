@@ -40,13 +40,14 @@
    "msp.web.id" tanpa www -- kasus nyata yang juga terjadi). Sebagai
    gantinya, mspFindRegisteredBingSite() di bawah memanggil GetUserSites
    dulu, mencocokkan berdasar HOSTNAME (case-insensitive, mengabaikan
-   skema/trailing-slash) terhadap input pengguna, lalu memakai STRING
-   ASLI dari GetUserSites (bukan hasil normalisasi tebakan) untuk
-   panggilan GetLinkCounts/GetUrlLinks berikutnya -- dijamin cocok
-   persis karena memang berasal dari sumbernya. Kalau tidak ada yang
-   cocok, pemanggil (backlink.js) menampilkan pesan eksplisit "situs ini
-   tidak terdaftar di akun Anda" berikut daftar situs yang benar terdaftar
-   -- bukan diam-diam menunjukkan 0 yang menyesatkan seperti sebelumnya.
+   skema/trailing-slash, DAN mengabaikan prefix "www." -- lihat
+   mspStripWwwPrefix()) terhadap input pengguna, lalu memakai STRING ASLI
+   dari GetUserSites (bukan hasil normalisasi tebakan) untuk panggilan
+   GetLinkCounts/GetUrlLinks berikutnya -- dijamin cocok persis karena
+   memang berasal dari sumbernya. Kalau tidak ada yang cocok, pemanggil
+   (backlink.js) menampilkan pesan eksplisit "situs ini tidak terdaftar
+   di akun Anda" berikut daftar situs yang benar terdaftar -- bukan
+   diam-diam menunjukkan 0 yang menyesatkan seperti sebelumnya.
 
    MASIH BELUM TERVERIFIKASI (contoh nyata di atas kebetulan Links: [],
    situsnya belum punya backlink terindeks Bing -- jadi bentuk tiap ITEM
@@ -191,12 +192,24 @@ function mspParseBingUserSitesResponse(raw, status) {
  * berikutnya jadi dijamin cocok karena memang berasal dari sumbernya,
  * bukan hasil tebakan.
  */
+/**
+ * "www.example.com" dan "example.com" dianggap situs yang sama untuk
+ * keperluan pencocokan -- banyak situs redirect satu ke yang lain, dan
+ * Bing Webmaster Tools sendiri memperlakukan keduanya sebagai satu
+ * properti (mendaftarkan versi www bisa "diserap" jadi non-www kalau
+ * itu tujuan redirect-nya). Cukup lepas prefix "www." sebelum
+ * dibandingkan, tidak perlu deteksi redirect sungguhan.
+ */
+function mspStripWwwPrefix(hostname) {
+  return hostname.indexOf("www.") === 0 ? hostname.slice(4) : hostname;
+}
+
 function mspFindRegisteredBingSite(targetUrl, sites) {
   var targetHostname;
-  try { targetHostname = new URL(targetUrl).hostname.toLowerCase(); } catch (e) { return null; }
+  try { targetHostname = mspStripWwwPrefix(new URL(targetUrl).hostname.toLowerCase()); } catch (e) { return null; }
   for (var i = 0; i < sites.length; i++) {
     var siteHostname;
-    try { siteHostname = new URL(sites[i].url).hostname.toLowerCase(); } catch (e) { continue; }
+    try { siteHostname = mspStripWwwPrefix(new URL(sites[i].url).hostname.toLowerCase()); } catch (e) { continue; }
     if (siteHostname === targetHostname) { return sites[i]; }
   }
   return null;

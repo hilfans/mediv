@@ -130,7 +130,6 @@ body {
   color: var(--msp-muted);
   font-size: 13px;
   line-height: 1.6;
-  max-width: 65ch;
 }
 
 .msp-setup-desc a {

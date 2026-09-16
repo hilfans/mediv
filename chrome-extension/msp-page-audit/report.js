@@ -83,6 +83,7 @@ async function handleTitleMetaAnalysis(rawSignals) {
     var parsed = mspParseTitleMetaResponse(raw);
     renderTitleMetaResult(parsed);
     resultEl.hidden = false;
+    document.getElementById("mspGeminiTitleMetaCard").classList.add("msp-has-result");
   } catch (err) {
     errorEl.textContent = (err && err.message) || "Gagal menganalisis dengan AI.";
     errorEl.hidden = false;
@@ -118,6 +119,7 @@ async function handleExecSummary(auditModel, crawlData, speedData) {
     var parsed = mspParseExecSummaryResponse(raw);
     renderExecSummaryResult(parsed);
     resultEl.hidden = false;
+    document.getElementById("mspGeminiSummaryCard").classList.add("msp-has-result");
   } catch (err) {
     errorEl.textContent = (err && err.message) || "Gagal membuat ringkasan dengan AI.";
     errorEl.hidden = false;

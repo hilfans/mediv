@@ -1104,6 +1104,20 @@ body {
     display: none !important;
   }
 
+  /* Kartu fitur AI (Gemini) yang belum pernah dijalankan (tombol +
+     penjelasan fitur disembunyikan lewat .msp-no-print di atas, tidak
+     ada hasil untuk ditampilkan) akan tersisa cuma judul kosong tanpa
+     isi kalau dicetak -- terlihat seperti bagian laporan yang rusak/
+     belum selesai untuk sebuah laporan audit resmi. Kartu ini diberi
+     kelas .msp-has-result oleh report.js begitu ada hasil AI yang
+     berhasil dirender; tanpa hasil, seluruh kartu disembunyikan dari
+     hasil cetak/PDF (tetap tampil normal di layar untuk pengguna yang
+     mau menjalankannya).
+  */
+  .msp-gemini-card:not(.msp-has-result) {
+    display: none !important;
+  }
+
   body {
     background: #fff;
   }
