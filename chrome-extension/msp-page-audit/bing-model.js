@@ -7,24 +7,44 @@
    menyentuh DOM/chrome.*) supaya mudah diuji tanpa Chrome sungguhan,
    dan supaya jelas tidak ada API key yang tertanam di dalamnya.
 
-   CATATAN PENTING soal keterbatasan pengetahuan: bentuk response JSON
-   di bawah ini disusun dari dokumentasi publik Bing Webmaster API,
-   BUKAN hasil verifikasi langsung ke API sungguhan (endpoint ini tidak
-   bisa diakses dari lingkungan pengembangan ekstensi ini). Kalau field
-   respons ternyata beda casing/struktur dari dugaan di sini, cukup
-   sesuaikan mspParseBingLinkCountsResponse() -- bagian pemanggil
-   (backlink.js) tidak perlu diubah selama fungsi ini tetap
+   STATUS VERIFIKASI (diperbarui setelah pengujian nyata pengguna, respons
+   asli GetLinkCounts untuk situs tanpa backlink):
+     {"d":{"__type":"LinkCounts:#Microsoft.Bing.Webmaster.Api","Links":[],"TotalPages":0}}
+
+   Jadi pembungkusnya BUKAN "d": [...] (array langsung) seperti dugaan
+   awal, tapi "d": { Links: [...], TotalPages: N, __type: "..." } --
+   array-nya satu tingkat lebih dalam, di properti "Links". Sudah
+   diperbaiki di mspUnwrapBingPayload() di bawah, dengan fallback ke
+   bentuk lain (siapa tahu endpoint GetUrlLinks beda) supaya tetap
+   defensif.
+
+   MASIH BELUM TERVERIFIKASI (contoh nyata di atas kebetulan Links: [],
+   situsnya belum punya backlink terindeks Bing -- jadi bentuk tiap ITEM
+   di dalam "Links" saat benar-benar berisi data belum pernah dilihat):
+   - Nama field per-item untuk GetLinkCounts (dugaan sekarang: "Url" +
+     "LinkCount") dan untuk GetUrlLinks (dugaan sekarang: "Url").
+   - Field "TotalPages" mengindikasikan respons ini KEMUNGKINAN
+     dipaginasi untuk situs dengan banyak halaman bertaut -- kode di sini
+     BELUM mengimplementasikan pengambilan halaman berikutnya (parameter
+     paging API ini juga belum diketahui namanya), jadi untuk situs
+     dengan backlink dalam jumlah besar, angka yang ditampilkan mungkin
+     cuma mencakup halaman pertama. Kalau pengguna melihat angka yang
+     terasa terlalu kecil dibanding dashboard Bing Webmaster Tools
+     langsung, ini kemungkinan penyebabnya -- bukan bug pembacaan data.
+
+   Kalau field per-item ternyata beda casing/struktur dari dugaan di
+   sini, cukup sesuaikan mspParseBingLinkCountsResponse() --  bagian
+   pemanggil (backlink.js) tidak perlu diubah selama fungsi ini tetap
    mengembalikan bentuk {url, linkCount} yang sama.
 
-   Beda dari PSI & Gemini yang API-nya milik Google dan sudah terverifikasi
-   mendukung fetch() langsung dari browser (header CORS mengizinkan origin
-   chrome-extension://), dukungan CORS Bing Webmaster API JUGA belum
-   terverifikasi -- endpoint ini bergaya WCF/SOAP lama (".svc") yang
-   secara historis lebih sering dibangun untuk dipanggil server-ke-server.
-   Kalau ternyata browser memblokir permintaannya karena CORS, itu akan
-   muncul sebagai TypeError generik "Failed to fetch" dari fetch() --
-   backlink.js menangani skenario ini dengan pesan yang menjelaskan
-   kemungkinan itu, bukan cuma "gagal" tanpa konteks.
+   Dukungan CORS Bing Webmaster API: pengujian di atas dilakukan lewat
+   navigasi langsung ke URL-nya di tab baru (bukan fetch() dari origin
+   chrome-extension://), jadi TIDAK membuktikan apa pun soal CORS --
+   masih belum terverifikasi. Kalau ternyata browser memblokir
+   permintaannya karena CORS, itu akan muncul sebagai TypeError generik
+   "Failed to fetch" dari fetch() -- backlink.js menangani skenario ini
+   dengan pesan yang menjelaskan kemungkinan itu, bukan cuma "gagal"
+   tanpa konteks.
    ============================================================ */
 
 var MSP_BING_ENDPOINT = "https://ssl.bing.com/webmaster/api.svc/json";
@@ -45,12 +65,14 @@ function mspBuildBingUrlLinksUrl(siteUrl, pageUrl, apiKey) {
 }
 
 /**
- * Sebagian API gaya ASMX/WCF lama Microsoft membungkus payload JSON-nya
- * dalam properti "d" (konvensi ASP.NET AJAX). Fungsi ini menerima kedua
- * kemungkinan (dibungkus "d" atau array langsung) supaya tidak rapuh
- * terhadap detail yang belum terverifikasi itu.
+ * Bentuk asli terverifikasi (lihat catatan di atas file):
+ *   {"d": {"__type": "...", "Links": [...], "TotalPages": N}}
+ * Array-nya ada di raw.d.Links, bukan raw.d langsung. Fallback ke
+ * raw.d sebagai array atau raw sebagai array tetap dipertahankan untuk
+ * jaga-jaga kalau GetUrlLinks ternyata beda bentuk dari GetLinkCounts.
  */
 function mspUnwrapBingPayload(raw) {
+  if (raw && raw.d && Array.isArray(raw.d.Links)) { return raw.d.Links; }
   if (raw && Array.isArray(raw.d)) { return raw.d; }
   if (Array.isArray(raw)) { return raw; }
   return null;
@@ -68,8 +90,13 @@ function mspCheckBingApiError(raw, status) {
   if (status === 401 || status === 403) {
     throw new Error("Bing Webmaster Tools menolak permintaan -- pastikan API key benar dan domain ini sudah diverifikasi kepemilikannya di akun Bing Webmaster Tools yang API key-nya Anda pakai.");
   }
-  if (raw && typeof raw === "object" && (raw.ErrorCode || raw.Message)) {
-    throw new Error("Bing Webmaster Tools API error: " + (raw.Message || raw.ErrorCode) +
+  // Sekarang sudah terverifikasi bahwa respons sukses selalu dibungkus
+  // "d" (lihat catatan di atas file) -- error kemungkinan besar dibungkus
+  // sama, jadi dicek di kedua tempat (raw langsung DAN raw.d) supaya
+  // tidak terlewat kalau ternyata error juga dibungkus.
+  var errObj = (raw && raw.d && typeof raw.d === "object" && (raw.d.ErrorCode || raw.d.Message)) ? raw.d : raw;
+  if (errObj && typeof errObj === "object" && (errObj.ErrorCode || errObj.Message)) {
+    throw new Error("Bing Webmaster Tools API error: " + (errObj.Message || errObj.ErrorCode) +
       " -- kemungkinan domain ini belum ditambahkan/diverifikasi di akun Bing Webmaster Tools Anda.");
   }
 }

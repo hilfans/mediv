@@ -313,38 +313,49 @@ error yang menjelaskan hal ini, bukan data kosong atau bug. Ini bukan
 "cek backlink kompetitor secara bebas" seperti Ahrefs/SEMrush — cuma
 untuk situs yang memang dikelola sendiri oleh pemilik API key.
 
-### Ketidakpastian teknis yang belum terverifikasi langsung
+### Ketidakpastian teknis — status setelah pengujian nyata pertama
 
-Dua hal berikut **tidak bisa diverifikasi secara langsung** saat fitur
-ini dibangun, karena domain `ssl.bing.com` diblokir oleh kebijakan
-jaringan lingkungan pengembangan (`curl` ke domain itu gagal dengan
-`403 CONNECT` di level gateway):
+Saat fitur ini pertama dibangun, domain `ssl.bing.com` diblokir oleh
+kebijakan jaringan lingkungan pengembangan (`curl` ke domain itu gagal
+dengan `403 CONNECT` di level gateway), jadi dua hal berikut tidak bisa
+diverifikasi langsung. Setelah pengujian nyata seorang pengguna, satu
+di antaranya sudah terkonfirmasi:
 
-1. **Skema respons JSON API ini** — struktur field `GetLinkCounts` dan
-   `GetUrlLinks` disusun berdasarkan dokumentasi publik Bing Webmaster
-   Tools API (termasuk kemungkinan pembungkus gaya ASP.NET AJAX `{"d":
-   [...]}`) dan penanganan defensif di `bing-model.js`
-   (`mspUnwrapBingPayload`, `mspParseBingLinkCountsResponse`,
-   `mspParseBingUrlLinksResponse`), tapi belum pernah diuji melawan
-   respons sungguhan dari API-nya.
-2. **Dukungan CORS API ini** — tidak diketahui apakah `ssl.bing.com`
-   mengirim header CORS yang mengizinkan `fetch()` langsung dari origin
-   `chrome-extension://`. Sebagai jaring pengaman, `backlink.js` secara
-   eksplisit meminta **optional host permission** `https://ssl.bing.com/*`
-   lewat `chrome.permissions.request()` sebelum panggilan API pertama —
-   host permission yang benar-benar di-grant membuat Chrome **melewati**
-   pembatasan CORS untuk origin itu, apa pun header CORS yang dikirim
-   API-nya. Kalau ternyata caranya tetap gagal (`fetch()` melempar
-   `TypeError: Failed to fetch`), `backlink.js` menampilkan pesan error
-   yang menyebutkan kemungkinan ini secara eksplisit (lihat
-   `describeNetworkError()`), termasuk bahwa perbaikannya butuh
-   penyesuaian arsitektur (server perantara) — bukan sesuatu yang bisa
-   diperbaiki dari sisi ekstensi murni client-side.
+1. **Skema respons JSON API ini — SUDAH TERKONFIRMASI sebagian.**
+   Respons asli `GetLinkCounts` untuk situs tanpa backlink:
+   ```json
+   {"d":{"__type":"LinkCounts:#Microsoft.Bing.Webmaster.Api","Links":[],"TotalPages":0}}
+   ```
+   Bukan `{"d": [...]}` (array langsung) seperti dugaan awal dari
+   dokumentasi publik, tapi `{"d": {Links: [...], TotalPages: N,
+   __type: "..."}}` — array-nya satu tingkat lebih dalam di properti
+   `Links`. `mspUnwrapBingPayload()` di `bing-model.js` sudah diperbaiki
+   sesuai temuan ini. Yang **masih belum terverifikasi**: nama field per
+   item di dalam `Links` saat benar-benar berisi data (contoh nyata di
+   atas kebetulan array-nya kosong), dan makna `TotalPages` — kalau ini
+   memang paginasi seperti dugaan, situs dengan banyak halaman bertaut
+   bisa jadi cuma menampilkan halaman pertama karena paginasi belum
+   diimplementasikan (parameter paging-nya juga belum diketahui).
+2. **Dukungan CORS API ini** — **masih belum terverifikasi.** Pengujian
+   nyata di atas dilakukan lewat navigasi langsung ke URL API-nya di tab
+   baru, bukan `fetch()` dari origin `chrome-extension://`, jadi belum
+   membuktikan apa pun soal CORS. Sebagai jaring pengaman, `backlink.js`
+   secara eksplisit meminta **optional host permission**
+   `https://ssl.bing.com/*` lewat `chrome.permissions.request()` sebelum
+   panggilan API pertama — host permission yang benar-benar di-grant
+   membuat Chrome **melewati** pembatasan CORS untuk origin itu, apa pun
+   header CORS yang dikirim API-nya. Kalau ternyata caranya tetap gagal
+   (`fetch()` melempar `TypeError: Failed to fetch`), `backlink.js`
+   menampilkan pesan error yang menyebutkan kemungkinan ini secara
+   eksplisit (lihat `describeNetworkError()`), termasuk bahwa
+   perbaikannya butuh penyesuaian arsitektur (server perantara) — bukan
+   sesuatu yang bisa diperbaiki dari sisi ekstensi murni client-side.
 
-**Kalau Anda menguji fitur ini dengan API key Bing Webmaster Tools asli**,
-laporkan hasilnya (berhasil/gagal, pesan error apa kalau gagal) supaya
-kedua ketidakpastian di atas bisa diperbaiki berdasarkan data nyata,
-mengikuti pola yang sama seperti perbaikan `gemini-3.6-flash` sebelumnya.
+**Kalau Anda menguji fitur ini lagi dengan situs yang sudah punya
+backlink sungguhan** (bukan 0 seperti pengujian pertama), laporkan
+bentuk data yang tampil (khususnya apakah jumlah/URL-nya masuk akal)
+supaya ketidakpastian nomor 1 yang tersisa (nama field per-item &
+paginasi) bisa diperbaiki berdasarkan data nyata juga.
 
 ### API Key Bing Webmaster Tools (opsional, terpisah dari key PSI & Gemini)
 
