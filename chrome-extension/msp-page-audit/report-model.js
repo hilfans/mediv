@@ -128,6 +128,7 @@ function mspExtractDomSignals() {
       if (v) { fields[key] = String(v).slice(0, 200); }
     }
     pick("name");
+    pick("alternateName");
     pick("url");
     pick("logo", function (v) { return v && typeof v === "object" ? v.url : v; });
     pick("image", function (v) { return v && typeof v === "object" ? v.url : v; });
@@ -142,6 +143,14 @@ function mspExtractDomSignals() {
       }
       return v;
     });
+    pick("geo", function (v) {
+      if (v && typeof v === "object" && v.latitude != null && v.longitude != null) {
+        return v.latitude + ", " + v.longitude;
+      }
+      return v;
+    });
+    pick("hasMap", function (v) { return v && typeof v === "object" ? v.url : v; });
+    pick("@id");
     return fields;
   }
 
@@ -252,6 +261,43 @@ function mspExtractDomSignals() {
   }
   var googleBusinessLink = findGoogleBusinessLink(externalLinksList, jsonLdBlocks);
 
+  // Heuristik serupa GBP di atas, tapi untuk profil media sosial resmi.
+  // Pola URL sengaja mengecualikan path share/dialog/widget umum (mis.
+  // facebook.com/sharer/...) supaya tombol "Bagikan ke Facebook" di halaman
+  // tidak salah terdeteksi sebagai tautan profil resmi. Tetap heuristik
+  // murni -- bukan konfirmasi API resmi platform manapun.
+  var SOCIAL_PATTERNS = [
+    { id: "facebook", label: "Facebook Page", match: /(?:facebook\.com|fb\.com)\/(?!sharer|share\.php|dialog|plugins|tr\?|profile\.php\?id=0|policies|help|privacy|legal|groups)[A-Za-z0-9.]{3,}/i },
+    { id: "instagram", label: "Instagram", match: /instagram\.com\/(?!p\/|reel\/|reels\/|explore\/|accounts\/|stories\/)[A-Za-z0-9._]{1,30}/i },
+    { id: "x", label: "X (Twitter)", match: /(?:twitter\.com|x\.com)\/(?!intent\/|share|hashtag\/|i\/|search|home)[A-Za-z0-9_]{1,15}/i },
+    { id: "linkedin", label: "LinkedIn Company", match: /linkedin\.com\/company\/[A-Za-z0-9-]+/i },
+    { id: "youtube", label: "YouTube Channel", match: /youtube\.com\/(?:channel\/|c\/|@|user\/)[A-Za-z0-9_-]+/i },
+    { id: "tiktok", label: "TikTok", match: /tiktok\.com\/@[A-Za-z0-9._]+/i },
+    { id: "threads", label: "Threads", match: /threads\.(?:net|com)\/@[A-Za-z0-9._]+/i }
+  ];
+  function findSocialLinks(links, blocks) {
+    var sameAsUrls = [];
+    for (var b = 0; b < blocks.length; b++) {
+      var items = blocks[b].items || [];
+      for (var it = 0; it < items.length; it++) {
+        var sameAs = items[it].fields && items[it].fields.sameAs;
+        if (sameAs) {
+          var urls = sameAs.match(/https?:\/\/\S+/g) || [];
+          for (var u = 0; u < urls.length; u++) { sameAsUrls.push(urls[u].replace(/[,;]+$/, "")); }
+        }
+      }
+    }
+    var allLinks = links.concat(sameAsUrls);
+    return SOCIAL_PATTERNS.map(function (platform) {
+      var foundUrl = "";
+      for (var i = 0; i < allLinks.length; i++) {
+        if (platform.match.test(allLinks[i])) { foundUrl = allLinks[i]; break; }
+      }
+      return { id: platform.id, label: platform.label, found: !!foundUrl, url: foundUrl };
+    });
+  }
+  var socialLinks = findSocialLinks(externalLinksList, jsonLdBlocks);
+
   return {
     url: location.href,
     origin: origin,
@@ -274,6 +320,7 @@ function mspExtractDomSignals() {
     jsonLdErrors: jsonLdErrors,
     jsonLdBlocks: jsonLdBlocks,
     googleBusinessLink: googleBusinessLink,
+    socialLinks: socialLinks,
     wordCount: wordCount,
     bodyTextExcerpt: bodyTextExcerpt,
     internalLinks: internalLinksList.length,
@@ -441,6 +488,7 @@ function mspSummarizeSchemaItem(item) {
     if (v) { fields[key] = String(v).slice(0, 200); }
   }
   pick("name");
+  pick("alternateName");
   pick("url");
   pick("logo", function (v) { return v && typeof v === "object" ? v.url : v; });
   pick("image", function (v) { return v && typeof v === "object" ? v.url : v; });
@@ -455,6 +503,14 @@ function mspSummarizeSchemaItem(item) {
     }
     return v;
   });
+  pick("geo", function (v) {
+    if (v && typeof v === "object" && v.latitude != null && v.longitude != null) {
+      return v.latitude + ", " + v.longitude;
+    }
+    return v;
+  });
+  pick("hasMap", function (v) { return v && typeof v === "object" ? v.url : v; });
+  pick("@id");
   return fields;
 }
 
@@ -483,6 +539,42 @@ function mspFindGoogleBusinessLink(links, blocks) {
     }
   }
   return "";
+}
+
+/**
+ * Versi top-level dari findSocialLinks() yang di-inline di dalam
+ * mspExtractDomSignals() di atas (alasan sama seperti mspFindGoogleBusinessLink).
+ * Dipakai oleh crawl-engine.js supaya logikanya tidak ditulis dua kali.
+ */
+var MSP_SOCIAL_PATTERNS = [
+  { id: "facebook", label: "Facebook Page", match: /(?:facebook\.com|fb\.com)\/(?!sharer|share\.php|dialog|plugins|tr\?|profile\.php\?id=0|policies|help|privacy|legal|groups)[A-Za-z0-9.]{3,}/i },
+  { id: "instagram", label: "Instagram", match: /instagram\.com\/(?!p\/|reel\/|reels\/|explore\/|accounts\/|stories\/)[A-Za-z0-9._]{1,30}/i },
+  { id: "x", label: "X (Twitter)", match: /(?:twitter\.com|x\.com)\/(?!intent\/|share|hashtag\/|i\/|search|home)[A-Za-z0-9_]{1,15}/i },
+  { id: "linkedin", label: "LinkedIn Company", match: /linkedin\.com\/company\/[A-Za-z0-9-]+/i },
+  { id: "youtube", label: "YouTube Channel", match: /youtube\.com\/(?:channel\/|c\/|@|user\/)[A-Za-z0-9_-]+/i },
+  { id: "tiktok", label: "TikTok", match: /tiktok\.com\/@[A-Za-z0-9._]+/i },
+  { id: "threads", label: "Threads", match: /threads\.(?:net|com)\/@[A-Za-z0-9._]+/i }
+];
+function mspFindSocialLinks(links, blocks) {
+  var sameAsUrls = [];
+  for (var b = 0; b < blocks.length; b++) {
+    var items = blocks[b].items || [];
+    for (var it = 0; it < items.length; it++) {
+      var sameAs = items[it].fields && items[it].fields.sameAs;
+      if (sameAs) {
+        var urls = sameAs.match(/https?:\/\/\S+/g) || [];
+        for (var u = 0; u < urls.length; u++) { sameAsUrls.push(urls[u].replace(/[,;]+$/, "")); }
+      }
+    }
+  }
+  var allLinks = links.concat(sameAsUrls);
+  return MSP_SOCIAL_PATTERNS.map(function (platform) {
+    var foundUrl = "";
+    for (var i = 0; i < allLinks.length; i++) {
+      if (platform.match.test(allLinks[i])) { foundUrl = allLinks[i]; break; }
+    }
+    return { id: platform.id, label: platform.label, found: !!foundUrl, url: foundUrl };
+  });
 }
 
 function mspScoreFromCounts(counts) {
@@ -627,6 +719,35 @@ function mspEvaluate(dom, net) {
       { type: "jsonld-detail", blocks: dom.jsonLdBlocks || [] }));
   }
 
+  // Kelengkapan field Organization/LocalBusiness -- kehadiran node-nya saja
+  // sudah dicek di atas (masuk MSP_KEY_SCHEMA_TYPES), tapi node yang ada
+  // isinya kosong (mis. LocalBusiness tanpa telephone/address) kurang
+  // berguna untuk local SEO. geo/hasMap cuma diwajibkan untuk LocalBusiness
+  // (bukan Organization generik) karena tidak semua bisnis online punya
+  // lokasi fisik yang relevan untuk pencarian lokal.
+  var bizItem = null;
+  (dom.jsonLdBlocks || []).some(function (b) {
+    return (b.items || []).some(function (it) {
+      if (it.type === "LocalBusiness" || it.type === "Organization") {
+        bizItem = it;
+        return true;
+      }
+      return false;
+    });
+  });
+  if (bizItem) {
+    var isLocalBiz = bizItem.type === "LocalBusiness";
+    var requiredBizFields = isLocalBiz
+      ? [["telephone", "telepon"], ["address", "alamat"], ["geo", "koordinat"], ["hasMap", "hasMap"]]
+      : [["telephone", "telepon"], ["address", "alamat"]];
+    var missingBizFields = requiredBizFields.filter(function (f) { return !bizItem.fields[f[0]]; });
+    socialRows.push(mspRow(missingBizFields.length ? "warn" : "pass",
+      "Kelengkapan Data " + bizItem.type,
+      missingBizFields.length
+        ? "Field penting belum terisi: " + missingBizFields.map(function (f) { return f[1]; }).join(", ") + "."
+        : "Semua field penting (" + requiredBizFields.map(function (f) { return f[1]; }).join(", ") + ") sudah terisi."));
+  }
+
   var aiBots = (net.robotsTxt && net.robotsTxt.aiBots) || [];
   if (!net.robotsTxt || !net.robotsTxt.checked) {
     // Tidak bisa diperiksa (mis. gagal fetch robots.txt) -- tidak ditambah baris,
@@ -654,6 +775,19 @@ function mspEvaluate(dom, net) {
     socialRows.push(mspRow("info", "Profil Google Business / Maps",
       "Tidak ditemukan tautan ke Google Maps/Business Profile di halaman ini maupun di JSON-LD (sameAs). Ini bukan konfirmasi resmi dari Google -- bisnis bisa saja sudah punya profil tapi belum menautkannya di situs. Kalau memang belum punya, disarankan mendaftar lewat google.com/business."));
   }
+
+  // Heuristik pencarian tautan ke 7 platform media sosial paling umum,
+  // sama caranya dengan deteksi GBP di atas. Status selalu "info" (TIDAK
+  // mempengaruhi skor) karena tidak semua bisnis wajar memakai semua
+  // platform -- absennya satu platform bukan cacat teknis, cuma pilihan
+  // bisnis. Baris ini murni membantu admin melihat platform mana yang
+  // belum ditautkan dari situsnya.
+  var socialLinks = dom.socialLinks || [];
+  var socialFoundCount = socialLinks.filter(function (s) { return s.found; }).length;
+  socialRows.push(mspRow("info",
+    "Media Sosial Resmi (" + socialFoundCount + "/" + socialLinks.length + " ditemukan)",
+    "Heuristik pencarian tautan ke profil resmi Facebook, Instagram, X, LinkedIn Company, YouTube, TikTok, dan Threads -- di halaman ini maupun di JSON-LD (sameAs). Bukan konfirmasi resmi platform terkait, dan tidak mempengaruhi skor.",
+    { type: "social-links-detail", socialLinks: socialLinks }));
 
   buildCategory("social", "Sosial, Data Terstruktur & AI Bot", socialRows);
 

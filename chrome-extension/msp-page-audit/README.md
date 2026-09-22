@@ -26,11 +26,31 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
     relatif (berisiko gagal dibaca Facebook/LinkedIn) atau `og:title`
     berbeda dari tag `<title>` halaman.
   - **JSON-LD**: dipecah per blok (bukan digabung), menampilkan properti
-    kunci sesuai tipenya (`name`, `url`, `logo`, `author`, `address`, dst.),
+    kunci sesuai tipenya (`name`, `alternateName`, `url`, `logo`, `author`,
+    `address`, `telephone`, `geo`, `hasMap`, `@id`, `sameAs`, dst.),
     mendeteksi **typo kapitalisasi pada `@type`** (mis. `organization`
     yang mestinya `Organization` — schema.org sensitif huruf besar/kecil),
     dan kalau ada blok yang gagal di-parse, menunjukkan nomor bloknya
     plus pesan error `JSON.parse` yang sebenarnya supaya mudah dilacak.
+  - **Kelengkapan Data Organization/LocalBusiness**: kalau node
+    `Organization`/`LocalBusiness` ditemukan, dicek apakah field penting
+    sudah terisi — `telephone` & `address` untuk `Organization`, ditambah
+    `geo` & `hasMap` khusus untuk `LocalBusiness` (tidak diwajibkan untuk
+    `Organization` generik karena tidak semua bisnis online punya lokasi
+    fisik yang relevan untuk pencarian lokal). Field yang belum terisi
+    disebutkan namanya, bukan cuma status lolos/tidak.
+  - **Media Sosial Resmi**: heuristik yang mencari tautan ke 7 platform
+    (Facebook Page, Instagram, X/Twitter, LinkedIn Company, YouTube
+    Channel, TikTok, Threads) di antara link keluar halaman maupun `sameAs`
+    JSON-LD — pola URL sengaja mengecualikan link share/dialog/widget umum
+    (mis. `facebook.com/sharer/...`, `youtube.com/watch?v=...`) supaya
+    tombol "Bagikan" tidak salah terdeteksi sebagai profil resmi.
+    `twitter.com` dan `x.com` sama-sama dikenali sebagai platform X;
+    `linkedin.com/company/...` (bukan `/in/...` profil personal) yang
+    dicari untuk "LinkedIn Company". Sama seperti Profil Google
+    Business/Maps: status selalu `info`, **tidak mempengaruhi skor**,
+    karena tidak semua bisnis wajar memakai semua platform — murni bantu
+    admin melihat platform mana yang belum ditautkan.
   - **Crawler AI Bot (robots.txt)**: mengecek apakah `robots.txt`
     memblokir crawler AI utama (`GPTBot`, `ChatGPT-User`, `ClaudeBot`,
     `anthropic-ai`, `PerplexityBot`, `CCBot`, `Google-Extended`,
@@ -543,6 +563,20 @@ semua kasus.
   sungguhan (yang butuh API key + billing terpisah, di luar cakupan
   versi ini). Hasil "tidak ditemukan" tidak dihitung sebagai kesalahan
   di skor, persis karena heuristik ini bisa false negative.
+- Deteksi "Media Sosial Resmi" (`MSP_SOCIAL_PATTERNS` di `report-model.js`)
+  punya keterbatasan yang sama seperti deteksi GBP di atas — murni
+  pencocokan pola URL, bisa false negative (profil ada tapi tidak
+  ditautkan dari situs) maupun (jarang) false positive kalau URL share
+  widget punya struktur path yang tidak terduga di luar daftar
+  pengecualian yang sudah didaftarkan.
+- **Konsistensi NAP (Name-Address-Phone) lintas halaman TIDAK
+  diimplementasikan** — sempat didesain (pengelompokan entitas via `@id`
+  atau `name`, bandingkan `telephone`/`address`/`geo`/`url` antar halaman
+  hasil Crawl Situs) tapi sengaja ditunda karena kompleksitas & risiko
+  false-positive lebih tinggi (lihat riwayat diskusi pengembangan) —
+  bukan sesuatu yang lupa dibangun. Ekstensi ini baru menampilkan field
+  NAP apa adanya per halaman (lewat detail JSON-LD & baris Kelengkapan
+  Data), tidak membandingkannya antar halaman/sumber lain.
 - Crawl v2 bukan crawler penuh ala mesin pencari: konkurensi & jeda antar
   request dibuat tetap (bukan makin agresif di tingkat Heavy/Ultra — cuma
   jumlah halamannya yang beda), dan link ke aset non-HTML (PDF, gambar,

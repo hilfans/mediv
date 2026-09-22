@@ -302,6 +302,7 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
   });
 
   var googleBusinessLink = mspFindGoogleBusinessLink(allLinks, jsonLdBlocks);
+  var socialLinks = mspFindSocialLinks(allLinks, jsonLdBlocks);
 
   return {
     url: pageUrl,
@@ -326,6 +327,7 @@ function mspExtractSignalsFromDocument(doc, pageUrl) {
     jsonLdErrors: jsonLdErrors,
     jsonLdBlocks: jsonLdBlocks,
     googleBusinessLink: googleBusinessLink,
+    socialLinks: socialLinks,
     wordCount: wordCount,
     bodyTextExcerpt: bodyTextExcerpt,
     internalLinks: internalLinks,

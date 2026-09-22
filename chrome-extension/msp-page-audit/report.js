@@ -301,13 +301,33 @@ function renderOgDetail(og) {
   return '<div class="msp-og-detail">' + rows + "</div>";
 }
 
+// Dipakai ulang gaya .msp-og-row/.msp-og-detail yang sama dengan Open
+// Graph di atas -- visualnya sama persis (label + nilai terisi/kosong).
+function renderSocialLinksDetail(socialLinks) {
+  var rows = (socialLinks || []).map(function (s) {
+    var cls = s.found ? "filled" : "empty";
+    var value = s.found
+      ? '<a href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(s.url) + "</a>"
+      : "(tidak ditemukan)";
+    return (
+      '<div class="msp-og-row ' + cls + '">' +
+        '<span class="msp-og-tag">' + escapeHtml(s.label) + "</span>" +
+        '<span class="msp-og-value">' + value + "</span>" +
+      "</div>"
+    );
+  }).join("");
+  return '<div class="msp-og-detail">' + rows + "</div>";
+}
+
 // Field yang paling sering dicek admin per tipe schema.org -- lihat
 // mspSummarizeSchemaItem() di report-model.js untuk daftar lengkap yang
 // mungkin muncul di sini.
 var JSONLD_FIELD_LABELS = {
-  name: "name", url: "url", logo: "logo", image: "image", headline: "headline",
-  author: "author", datePublished: "datePublished", telephone: "telephone",
-  sameAs: "sameAs", address: "address"
+  name: "name", alternateName: "alternateName", url: "url", logo: "logo",
+  image: "image", headline: "headline", author: "author",
+  datePublished: "datePublished", telephone: "telephone", sameAs: "sameAs",
+  address: "address", geo: "geo (koordinat)", hasMap: "hasMap",
+  "@id": "@id (identitas unik)"
 };
 
 function renderJsonLdDetail(blocks) {
@@ -388,6 +408,8 @@ function renderRow(r) {
     extraHtml = renderLinkBreakdown(r.extra);
   } else if (r.extra && r.extra.type === "og-detail") {
     extraHtml = renderOgDetail(r.extra.og);
+  } else if (r.extra && r.extra.type === "social-links-detail") {
+    extraHtml = renderSocialLinksDetail(r.extra.socialLinks);
   } else if (r.extra && r.extra.type === "jsonld-detail") {
     extraHtml = renderJsonLdDetail(r.extra.blocks);
   } else if (r.extra && r.extra.type === "missing-alt-images") {
