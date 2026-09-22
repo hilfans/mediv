@@ -119,24 +119,38 @@ function mspExtractDomSignals() {
   // cukup untuk menangkap typo/isi kosong pada field yang paling penting.
   function summarizeSchemaItem(item) {
     var fields = {};
-    function pick(key, transform) {
+    // Batas panjang beda per jenis field -- field URL (apalagi CDN gambar
+    // seperti blogger.googleusercontent.com) rutin lebih dari 200 karakter
+    // karena token panjang di path-nya, jauh lebih panjang dari field teks
+    // biasa (name, headline, dst.). sameAs dapat batas paling longgar karena
+    // bisa berisi BEBERAPA URL digabung (dipakai juga oleh
+    // findGoogleBusinessLink/findSocialLinks di bawah untuk pencocokan pola
+    // -- kepotong di sini berarti tautan di ujung daftar bisa gagal
+    // terdeteksi, bukan cuma soal tampilan). "..." ditambahkan supaya
+    // pemotongan jelas terlihat, tidak diam-diam terlihat seperti nilai
+    // lengkap yang salah.
+    function pick(key, transform, maxLen) {
       if (item[key] === undefined || item[key] === null || item[key] === "") { return; }
       var v = item[key];
       if (transform) { v = transform(v); }
       if (Array.isArray(v)) { v = v.filter(Boolean).join(", "); }
       if (v && typeof v === "object") { v = v.name || v.url || ""; }
-      if (v) { fields[key] = String(v).slice(0, 200); }
+      if (v) {
+        var str = String(v);
+        var limit = maxLen || 200;
+        fields[key] = str.length > limit ? str.slice(0, limit) + "..." : str;
+      }
     }
     pick("name");
     pick("alternateName");
-    pick("url");
-    pick("logo", function (v) { return v && typeof v === "object" ? v.url : v; });
-    pick("image", function (v) { return v && typeof v === "object" ? v.url : v; });
+    pick("url", null, 500);
+    pick("logo", function (v) { return v && typeof v === "object" ? v.url : v; }, 500);
+    pick("image", function (v) { return v && typeof v === "object" ? v.url : v; }, 500);
     pick("headline");
     pick("author", function (v) { return v && typeof v === "object" ? v.name : v; });
     pick("datePublished");
     pick("telephone");
-    pick("sameAs");
+    pick("sameAs", null, 2000);
     pick("address", function (v) {
       if (v && typeof v === "object") {
         return [v.streetAddress, v.addressLocality, v.addressRegion, v.postalCode, v.addressCountry].filter(Boolean).join(", ");
@@ -149,8 +163,8 @@ function mspExtractDomSignals() {
       }
       return v;
     });
-    pick("hasMap", function (v) { return v && typeof v === "object" ? v.url : v; });
-    pick("@id");
+    pick("hasMap", function (v) { return v && typeof v === "object" ? v.url : v; }, 500);
+    pick("@id", null, 500);
     return fields;
   }
 
@@ -479,24 +493,31 @@ function mspCheckSchemaTypeSpelling(type) {
 
 function mspSummarizeSchemaItem(item) {
   var fields = {};
-  function pick(key, transform) {
+  // Lihat catatan panjang di salinan inline summarizeSchemaItem() dalam
+  // mspExtractDomSignals() -- batas panjang beda per jenis field, dan
+  // "..." ditambahkan kalau benar-benar terpotong.
+  function pick(key, transform, maxLen) {
     if (item[key] === undefined || item[key] === null || item[key] === "") { return; }
     var v = item[key];
     if (transform) { v = transform(v); }
     if (Array.isArray(v)) { v = v.filter(Boolean).join(", "); }
     if (v && typeof v === "object") { v = v.name || v.url || ""; }
-    if (v) { fields[key] = String(v).slice(0, 200); }
+    if (v) {
+      var str = String(v);
+      var limit = maxLen || 200;
+      fields[key] = str.length > limit ? str.slice(0, limit) + "..." : str;
+    }
   }
   pick("name");
   pick("alternateName");
-  pick("url");
-  pick("logo", function (v) { return v && typeof v === "object" ? v.url : v; });
-  pick("image", function (v) { return v && typeof v === "object" ? v.url : v; });
+  pick("url", null, 500);
+  pick("logo", function (v) { return v && typeof v === "object" ? v.url : v; }, 500);
+  pick("image", function (v) { return v && typeof v === "object" ? v.url : v; }, 500);
   pick("headline");
   pick("author", function (v) { return v && typeof v === "object" ? v.name : v; });
   pick("datePublished");
   pick("telephone");
-  pick("sameAs");
+  pick("sameAs", null, 2000);
   pick("address", function (v) {
     if (v && typeof v === "object") {
       return [v.streetAddress, v.addressLocality, v.addressRegion, v.postalCode, v.addressCountry].filter(Boolean).join(", ");
@@ -509,8 +530,8 @@ function mspSummarizeSchemaItem(item) {
     }
     return v;
   });
-  pick("hasMap", function (v) { return v && typeof v === "object" ? v.url : v; });
-  pick("@id");
+  pick("hasMap", function (v) { return v && typeof v === "object" ? v.url : v; }, 500);
+  pick("@id", null, 500);
   return fields;
 }
 

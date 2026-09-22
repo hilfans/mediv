@@ -32,6 +32,16 @@ pihak ketiga mana pun) — lihat catatan lisensi di bagian bawah.
     yang mestinya `Organization` — schema.org sensitif huruf besar/kecil),
     dan kalau ada blok yang gagal di-parse, menunjukkan nomor bloknya
     plus pesan error `JSON.parse` yang sebenarnya supaya mudah dilacak.
+    Setiap field dibatasi panjangnya supaya layout laporan tidak jebol
+    kalau ada nilai yang aneh/rusak — batasnya beda per jenis field:
+    500 karakter untuk field URL (`url`, `logo`, `image`, `hasMap`,
+    `@id`, sering panjang untuk URL CDN gambar seperti
+    `blogger.googleusercontent.com`), 2000 karakter untuk `sameAs`
+    (bisa berisi beberapa URL sosial media sekaligus), dan 200 karakter
+    untuk field teks lain (`name`, `headline`, dst.). Kalau nilainya
+    benar-benar melebihi batas itu, ditambahkan `"..."` di akhir supaya
+    pemotongannya terlihat jelas — bukan diam-diam terpotong seolah
+    itu nilai lengkap yang salah.
   - **Kelengkapan Data Organization/LocalBusiness**: kalau node
     `Organization`/`LocalBusiness` ditemukan, dicek apakah field penting
     sudah terisi — `telephone` & `address` untuk `Organization`, ditambah
